@@ -47,44 +47,6 @@ enum {
 	MODEL_TYPE_INDEX = 2
 };
 
-void SuggestionWindow::show(const cc::CodeCompletionResults& results) {
-	if( !results.empty() ) {
-		if( this->isShowing() ) { //close and show
-			this->close();
-		}
-		gtk_list_store_clear(model);
-		ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
-		g_print("start suggest show %d", pref->row_text_max);
-		GtkTreeIter iter;
-		for(size_t i = 0; i < results.size(); i++) {
-			gtk_list_store_append(model, &iter);
-			if( pref->row_text_max < results[i].label.length() ) {
-				g_print("too long  %d %s", results[i].label.length(), results[i].label.c_str() );
-				gtk_list_store_set(model, &iter,
-					MODEL_TYPEDTEXT_INDEX, results[i].typedText.c_str(),
-					MODEL_LABEL_INDEX,     results[i].label.substr(0, pref->row_text_max).c_str(),
-					MODEL_TYPE_INDEX,      icon_pixbufs[results[i].type],  -1);
-			} else {
-				gtk_list_store_set(model, &iter,
-					MODEL_TYPEDTEXT_INDEX, results[i].typedText.c_str(),
-					MODEL_LABEL_INDEX,     results[i].label.c_str(),
-					MODEL_TYPE_INDEX,      icon_pixbufs[results[i].type],  -1);
-			}
-		}
-		gtk_tree_view_columns_autosize(GTK_TREE_VIEW(tree_view));
-
-		arrange_window();
-
-		showing_flag = true;
-		filtered_str = "";
-
-		gtk_widget_show(tree_view);
-		gtk_widget_show(window);
-		/* call after gtk_widget_show */
-		gtk_tree_view_scroll_to_point(GTK_TREE_VIEW(tree_view), 0, 0);
-	}
-}
-
 void SuggestionWindow::show_with_filter(
 	const cc::CodeCompletionResults& results, const std::string& filter) {
 
@@ -140,12 +102,12 @@ void SuggestionWindow::select_suggestion() {
 			g_print ("will insert %s (%s)\n", typedtext, &typedtext[filtered_str.length()]);
 			GeanyDocument* doc = document_get_current();
 			if(doc != NULL) {
-				int added_byte  = filtered_str.length();
-				char* insert_text = &typedtext[filtered_str.length()];
-				int insert_byte = strlen(insert_text);
-				int cur_pos = sci_get_current_position(doc->editor->sci);
-				sci_insert_text(doc->editor->sci, -1, insert_text);
-				sci_set_current_position(doc->editor->sci, cur_pos + insert_byte, FALSE);
+				ScintillaObject* sci = doc->editor->sci;
+				int cur_pos = sci_get_current_position(sci);
+				int added_byte = filtered_str.length();
+				sci_set_selection_start(sci, cur_pos - added_byte);
+				sci_set_selection_end(sci, cur_pos);
+				sci_replace_sel(sci, typedtext);
 			}
 		}
 		g_free (typedtext);
@@ -180,11 +142,12 @@ gboolean SuggestionWindow::signal_key_press_and_release(
 	case GDK_KEY_BackSpace:
 		self->filter_backspace();
 		return FALSE; /* editor will delete a char. */
-	case GDK_KEY_Delete: case GDK_KEY_KP_Delete:
-	case GDK_KEY_Escape: case GDK_KEY_Right:
+	//case GDK_KEY_Delete: case GDK_KEY_KP_Delete:
+	case GDK_KEY_Escape:
+	case GDK_KEY_Right: case GDK_KEY_KP_Right:
 	case GDK_KEY_Left: case GDK_KEY_KP_Left:
 		self->close();
-		return TRUE;
+		return FALSE;
 	default:
 		return FALSE;
 	}
@@ -279,13 +242,13 @@ void SuggestionWindow::arrange_window() {
 
 	GtkAllocation rect_mainwindow;
 	gtk_widget_get_allocation(main_window, &rect_mainwindow);
-	g_print("mainwin %d %d %d %d",
-		rect_mainwindow.x, rect_mainwindow.y, rect_mainwindow.width, rect_mainwindow.height);
+	//g_print("mainwin %d %d %d %d",
+		//rect_mainwindow.x, rect_mainwindow.y, rect_mainwindow.width, rect_mainwindow.height);
 
 	GtkAllocation rect_notebook;
 	gtk_widget_get_allocation(notebook_widget, &rect_notebook);
-	g_print("notebook %d %d %d %d", rect_notebook.x, rect_notebook.y,
-		rect_notebook.width, rect_notebook.height);
+	//g_print("notebook %d %d %d %d", rect_notebook.x, rect_notebook.y,
+		//rect_notebook.width, rect_notebook.height);
 
 	int note_height = 0;
 	gtk_container_foreach( GTK_CONTAINER(notebook_widget),
@@ -395,8 +358,60 @@ void SuggestionWindow::arrange_window() {
 }
 
 
+void SuggestionWindow::setup_showing(const cc::CodeCompletionResults& results) {
+
+	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
+	g_print("start suggest show %d", pref->row_text_max);
+
+	int max_signature_length = 0;
+	gtk_tree_view_set_model(GTK_TREE_VIEW(tree_view), NULL);
+	gtk_list_store_clear(model);
+	GtkTreeIter iter;
+	for(size_t i = 0; i < results.size(); i++) {
+		const char* typedtext = results[i].typedText.c_str();
+		std::string labelstdstr = results[i].label;
+		if( labelstdstr.length() > pref->row_text_max ) {
+			labelstdstr = labelstdstr.substr(0, pref->row_text_max);
+		}
+		gtk_list_store_append(model, &iter);
+		gtk_list_store_set(model, &iter,
+				MODEL_TYPEDTEXT_INDEX, typedtext,
+				MODEL_LABEL_INDEX, labelstdstr.c_str(),
+				MODEL_TYPE_INDEX,      icon_pixbufs[results[i].type],  -1);
+
+		if( max_signature_length < labelstdstr.length() ) {
+			max_signature_length = labelstdstr.length();
+		}
+	}
+	gtk_tree_view_set_model(GTK_TREE_VIEW(tree_view), GTK_TREE_MODEL(model));
+	GtkTreeViewColumn* col = gtk_tree_view_get_column (GTK_TREE_VIEW(tree_view), 1);
+	gtk_tree_view_column_set_fixed_width(col,
+		max_signature_length * character_width + 10);
+
+	g_print("max_signature_length %d char width %d",  max_signature_length, character_width);
+}
+
+void SuggestionWindow::show(const cc::CodeCompletionResults& results) {
+	if( !results.empty() ) {
+		if( this->isShowing() ) { //close and show
+			this->close();
+		}
+		setup_showing(results);
+
+		arrange_window();
+
+		showing_flag = true;
+		filtered_str = "";
+
+		gtk_widget_show(tree_view);
+		gtk_widget_show(window);
+		/* call after gtk_widget_show */
+		gtk_tree_view_scroll_to_point(GTK_TREE_VIEW(tree_view), 0, 0);
+	}
+}
 
 #include "sw_icon_resources.hpp"
+
 
 SuggestionWindow::SuggestionWindow() : showing_flag(false) {
 	window = gtk_window_new(GTK_WINDOW_POPUP);
@@ -433,13 +448,25 @@ SuggestionWindow::SuggestionWindow() : showing_flag(false) {
 
 	GtkCellRenderer* pixbuf_renderer = gtk_cell_renderer_pixbuf_new();
 	GtkTreeViewColumn *i_column = gtk_tree_view_column_new_with_attributes(
-	"icon", pixbuf_renderer, "pixbuf", 2, NULL);
+	"icon", pixbuf_renderer, "pixbuf", MODEL_TYPE_INDEX, NULL);
 	gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), i_column);
 
 	GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
 	GtkTreeViewColumn *t_column = gtk_tree_view_column_new_with_attributes(
 		"label", text_renderer, "text", MODEL_LABEL_INDEX ,  NULL);
+	g_object_set(G_OBJECT(text_renderer), "family", "Monospace", NULL);
+	gtk_tree_view_column_set_sizing(t_column, GTK_TREE_VIEW_COLUMN_FIXED);
 	gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), t_column);
+
+	// get character width for determinate treeview width
+	PangoFontDescription* pango_fontdesc;
+	PangoLayout *pango_layout;
+	g_object_get(G_OBJECT(text_renderer), "font-desc", &pango_fontdesc, NULL);
+	pango_layout = gtk_widget_create_pango_layout(GTK_WIDGET(tree_view), "M");
+	pango_layout_set_font_description (pango_layout, pango_fontdesc);
+	pango_layout_get_pixel_size(pango_layout, &character_width, NULL);
+	pango_font_description_free(pango_fontdesc);
+	g_object_unref(pango_layout);
 
 	GtkTreeSelection* select = gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
 	gtk_tree_selection_set_mode(select, GTK_SELECTION_BROWSE);

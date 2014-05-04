@@ -39,6 +39,8 @@ namespace cc {
 		std::string filtered_str;
 		int pos_start;
 
+		int character_width; // for calc treeview width
+
 		int sig_handler_id[2]; // for need disconnect event
 
 		static gboolean signal_key_press_and_release(
@@ -52,6 +54,8 @@ namespace cc {
 		void select_suggestion();
 		void filter_backspace();
 		void do_filtering();
+
+		void setup_showing(const cc::CodeCompletionResults& results);
 	public:
 		void filter_add(int ch);
 		void filter_add(const std::string& str);

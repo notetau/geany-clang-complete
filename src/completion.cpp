@@ -32,7 +32,7 @@
 
 using namespace cc;
 
-static CompleteResultType getCursorType(CXCompletionResult& result)
+static CompleteResultType getCursorType(const CXCompletionResult& result)
 {
 	switch(result.CursorKind) {
 	case CXCursor_StructDecl: case CXCursor_UnionDecl: case CXCursor_ClassDecl:
@@ -61,76 +61,122 @@ static CompleteResultType getCursorType(CXCompletionResult& result)
 		return COMPLETE_RESULT_NONE;
 	}
 }
+enum CompleteResultAvailability {
+	COMPLETE_RESULT_AVAIL_AVAIL,
+	COMPLETE_RESULT_AVAIL_DEPRECATED,
+	COMPLETE_RESULT_AVAIL_NOTAVAIL,
+	COMPLETE_RESULT_AVAIL_NOTACCESS
+};
+struct ParseResult {
+	std::string return_type;
+	std::string typed_text;
+	std::string signature;
+	CompleteResultAvailability availability;
+	CompleteResultType type;
+};
 
-static void getExpression(CXCompletionString str, std::string& typedText, std::string& signature)
-{
-	int N = clang_getNumCompletionChunks(str);
-	std::string returnType;
-	std::string& exp = signature;
-	for(int i=0; i<N; i++) {
-        CXCompletionChunkKind kind = clang_getCompletionChunkKind(str, i);
-
-        switch(kind) {
-		case CXCompletionChunk_Optional:
-			exp += "{";
-			getExpression( clang_getCompletionChunkCompletionString(str, i), typedText, signature );
-            exp += "}";
-            break;
-        case CXCompletionChunk_VerticalSpace:
-			exp += "{VerticalSpace  }";
-            break;
-		case CXCompletionChunk_TypedText:
-			{
-				CXString text = clang_getCompletionChunkText(str, i);
-				const char* cstr = clang_getCString(text);
-				typedText = cstr;
-				exp += cstr;
-				clang_disposeString(text);
-			} break;
-		case CXCompletionChunk_Placeholder:
-		     {
-				CXString text = clang_getCompletionChunkText(str, i);
-				const char *cstr = clang_getCString(text);
-				exp += cstr ? cstr : "";
-				clang_disposeString(text);
-			} break;
-		case CXCompletionChunk_ResultType:
-			{
-				CXString text = clang_getCompletionChunkText(str, i);
-				const char *cstr = clang_getCString(text);
-				returnType = cstr ? cstr : "";
-				//exp += ' ';
-				clang_disposeString(text);
-			} break;
-		case CXCompletionChunk_Text:
-		case CXCompletionChunk_Informative:
-		case CXCompletionChunk_CurrentParameter:
-             {
-				CXString text = clang_getCompletionChunkText(str, i);
-				const char *cstr = clang_getCString(text);
-				exp += cstr ? cstr : "";
-				exp += ' ';
-				clang_disposeString(text);
-			} break;
-		case CXCompletionChunk_LeftParen:        exp +='('; break;
-		case CXCompletionChunk_RightParen:       exp +=')'; break;
-		case CXCompletionChunk_LeftBracket:      exp +='['; break;
-		case CXCompletionChunk_RightBracket:     exp +=']'; break;
-		case CXCompletionChunk_LeftBrace:        exp +='{'; break;
-		case CXCompletionChunk_RightBrace:       exp +='}'; break;
-		case CXCompletionChunk_LeftAngle:        exp +='<'; break;
-		case CXCompletionChunk_RightAngle:       exp +='>'; break;
-		case CXCompletionChunk_Comma:            exp +=", "; break;
-		case CXCompletionChunk_Colon:            exp +=':'; break;
-		case CXCompletionChunk_SemiColon:        exp +=';'; break;
-		case CXCompletionChunk_Equal:            exp +='='; break;
-		case CXCompletionChunk_HorizontalSpace:  exp +=' '; break;
+struct CompletionStringParser {
+	ParseResult* r;
+	void append(std::string& stdstr, CXCompletionString comp_str, unsigned chunk_idx) {
+		CXString text = clang_getCompletionChunkText(comp_str, chunk_idx);
+		const char* cstr = clang_getCString(text);
+		stdstr += cstr ? cstr : "";
+		clang_disposeString(text);
+	}
+	void setAveailability(CXCompletionString comp_str) {
+		CXAvailabilityKind kind = clang_getCompletionAvailability(comp_str);
+		switch(kind) {
+			case CXAvailability_Available:
+				r->availability = COMPLETE_RESULT_AVAIL_AVAIL;       break;
+			case CXAvailability_Deprecated:
+				r->availability = COMPLETE_RESULT_AVAIL_DEPRECATED; break;
+			case CXAvailability_NotAvailable:
+				r->availability = COMPLETE_RESULT_AVAIL_NOTAVAIL;    break;
+			case CXAvailability_NotAccessible:
+				r->availability = COMPLETE_RESULT_AVAIL_NOTACCESS;   break;
 		}
 	}
-	signature = exp + " : " + returnType;
-	//signature = exp;
-}
 
+	int enter_optional_count;
+
+	void do_parse(CXCompletionString comp_str)
+	{
+		int N = clang_getNumCompletionChunks(comp_str);
+		for(int i = 0; i < N; i++)
+		{
+			CXCompletionChunkKind kind = clang_getCompletionChunkKind(comp_str, i);
+
+			switch(kind) {
+			case CXCompletionChunk_Optional:
+				if( enter_optional_count == 0 ) { r->signature += "{"; }
+				enter_optional_count += 1;
+				do_parse(clang_getCompletionChunkCompletionString(comp_str, i));
+				enter_optional_count -= 1;
+				if( enter_optional_count == 0 ) { r->signature += "}"; }
+				break;
+			case CXCompletionChunk_TypedText:
+				append(r->typed_text, comp_str, i);
+				r->signature += r->typed_text;
+				break;
+			case CXCompletionChunk_ResultType:
+				append(r->return_type, comp_str, i);
+				break;
+			case CXCompletionChunk_Placeholder:
+				append(r->signature, comp_str, i);
+				r->signature += "{PH}";
+				break;
+			case CXCompletionChunk_Text:
+				append(r->signature, comp_str, i);
+				//r->signature += "{TX}";
+				break;
+			case CXCompletionChunk_Informative:
+				append(r->signature, comp_str, i);
+				//r->signature += "{IF}";
+				break;
+			case CXCompletionChunk_CurrentParameter:
+				append(r->signature, comp_str, i);
+				//r->signature += "{CP}";
+				break;
+			//start & end show func params?
+			case CXCompletionChunk_LeftParen:        r->signature += '('; break;
+			case CXCompletionChunk_RightParen:       r->signature += ')'; break;
+
+			case CXCompletionChunk_LeftBracket:      r->signature += '['; break;
+			case CXCompletionChunk_RightBracket:     r->signature += ']'; break;
+			case CXCompletionChunk_LeftBrace:        r->signature += '{'; break;
+			case CXCompletionChunk_RightBrace:       r->signature += '}'; break;
+			case CXCompletionChunk_LeftAngle:        r->signature += '<'; break;
+			case CXCompletionChunk_RightAngle:       r->signature += '>'; break;
+			case CXCompletionChunk_Comma:            r->signature += ", "; break;
+			case CXCompletionChunk_Colon:            r->signature += ':'; break;
+			case CXCompletionChunk_SemiColon:        r->signature += ';'; break;
+			case CXCompletionChunk_Equal:            r->signature += '='; break;
+			case CXCompletionChunk_HorizontalSpace:  r->signature += ' '; break;
+			case CXCompletionChunk_VerticalSpace:    r->signature += "\n"; break;
+			}
+		}
+	}
+
+	void parse(ParseResult* r, const CXCompletionResult& result) {
+		this->r = r;
+		CXCompletionString comp_str = result.CompletionString;
+		setAveailability(comp_str);
+		r->type = getCursorType(result);
+		enter_optional_count = 0;
+		do_parse(comp_str);
+		if( r->return_type != "" ) {
+			r->signature += " -> ";
+			r->signature += r->return_type;
+		}
+		if( r->availability == COMPLETE_RESULT_AVAIL_NOTACCESS ) {
+			r->signature.insert(0, "(NOTACCESS) ");
+		}
+		//unsigned priority = clang_getCompletionPriority(comp_str);
+		//char buf[1024] = {0};
+		//sprintf(buf, "%u", priority);
+		//r->signature += buf;
+	}
+};
 
 class CodeCompletion::CodeCompletionImpl {
 public:
@@ -139,7 +185,7 @@ public:
 	std::vector<std::string> commandLineArgs;
 
 	CodeCompletionImpl() {
-		index = clang_createIndex(0, 1); /* (excludeDeclarationsFromPCH, displayDiagnostics) */
+		index = clang_createIndex(0, 0); /* (excludeDeclarationsFromPCH, displayDiagnostics) */
 		if(!index) {
 			std::cerr<< "an unexpected error @ clang_createIndex" <<std::endl;
 		}
@@ -176,7 +222,6 @@ public:
 			//flag on 0x04 0x08 ? (precompile-preamble & caching complete result)
 			tu = clang_parseTranslationUnit(index, filename, argv, commandLineArgs.size(),
 											f, 1, clang_defaultEditingTranslationUnitOptions() );
-
 			if(tu) {
 				tuCache.insert(std::pair<std::string, CXTranslationUnit>(filename, tu));
 			}
@@ -210,14 +255,42 @@ public:
 		/* NEED reparse! */
 		clang_reparseTranslationUnit(tu, 1, f, clang_defaultReparseOptions(tu));
 
-		CXCodeCompleteResults* results = clang_codeCompleteAt(tu, filename, line, col,
-			f, 1, clang_defaultCodeCompleteOptions() );
-		std::cout<<"def comp opt="<<clang_defaultCodeCompleteOptions()<<std::endl;
+		// clang_defaultCodeCompleteOptions() (include macro)
+		unsigned comp_flag = clang_defaultCodeCompleteOptions();
+		CXCodeCompleteResults* results =
+			clang_codeCompleteAt(tu, filename, line, col, f, 1, comp_flag );
 
 		if(!results) {
 			std::cerr<< "an unexpected error @ clang_codeCompleteAt" <<std::endl;
 			return;
 		}
+
+		//some info
+		{
+			unsigned diag_num = clang_codeCompleteGetNumDiagnostics(results);
+			for(unsigned i = 0; i < diag_num; i++) {
+				CXDiagnostic diag = clang_codeCompleteGetDiagnostic(results, i);
+				CXString text = clang_formatDiagnostic(diag,
+					clang_defaultDiagnosticDisplayOptions());
+				const char* str = clang_getCString(text);
+				std::cerr<< "diag "<<i<<" "<< str <<std::endl;
+				clang_disposeDiagnostic(diag);
+				clang_disposeString(text);
+			}
+
+			long long cc_context = clang_codeCompleteGetContexts(results);
+			std::cerr<< "cc_context "<< cc_context <<std::endl;
+
+			// container such as class, struct, ...
+			//unsigned IsIncomplete;
+			//CXCursorKind ckind = clang_codeCompleteGetContainerKind(results, &IsIncomplete);
+			//std::cerr<< "cursor "<< ckind << " iscompleted="<<IsIncomplete<<std::endl;
+			//CXString cxstr = clang_codeCompleteGetContainerUSR(results);
+			//const char* str = clang_getCString(cxstr);
+			//std::cerr<< "usr "<< str <<std::endl;
+			//clang_disposeString(cxstr);
+		}
+
 		if( results->NumResults == 0 ) {
 			std::cerr<< "no code completion!!!" <<std::endl;
 			return;
@@ -228,9 +301,25 @@ public:
 				r.type = getCursorType(results->Results[i]);
 
 				if(r.type != COMPLETE_RESULT_NONE) {
-					getExpression(results->Results[i].CompletionString, r.typedText, r.label);
+					ParseResult pr;
+					CompletionStringParser().parse(&pr, results->Results[i]);
+					r.typedText = pr.typed_text;
+					r.label = pr.signature;
+					//getExpression(results->Results[i].CompletionString, r.typedText, r.label);
 					result.push_back(r);
 				}
+
+				{ // for annotate
+					CXCompletionString comp_str = results->Results[i].CompletionString;
+
+					unsigned anno = clang_getCompletionNumAnnotations(comp_str);
+					for(unsigned i=0; i<anno; i++) {
+						CXString text = clang_getCompletionAnnotation(comp_str, i);
+						printf("anno %s\n", clang_getCString(text) );
+						clang_disposeString(text);
+					}
+				}
+
 			}
 		}
 		clang_disposeCodeCompleteResults(results);
