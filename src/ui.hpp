@@ -39,6 +39,8 @@ namespace cc {
 		std::string filtered_str;
 		int pos_start;
 
+		int sig_handler_id[2]; // for need disconnect event
+
 		static gboolean signal_key_press_and_release(
 			GtkWidget *widget, GdkEventKey *event, SuggestionWindow* self);
 
@@ -54,10 +56,7 @@ namespace cc {
 		void filter_add(int ch);
 		void filter_add(const std::string& str);
 		SuggestionWindow();
-
-		~SuggestionWindow() {
-			gtk_widget_destroy(window);
-		}
+		~SuggestionWindow();
 
 		void show(const cc::CodeCompletionResults& results);
 		void show_with_filter(const cc::CodeCompletionResults& results, const std::string& filter);
@@ -70,7 +69,7 @@ namespace cc {
 		}
 		bool isShowing() const { return showing_flag; }
 
-		gboolean on_editor_notify(GObject *obj, GeanyEditor *editor, SCNotification *nt);
+		void arrange_window();
 	};
 
 }

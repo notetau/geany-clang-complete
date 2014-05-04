@@ -75,9 +75,6 @@ static void send_complete(GeanyEditor *editor, int flag)
 	int byte_line_len = pos - ls_pos;
 	if( byte_line_len < 0 ) { return; }
 
-	//ui_set_statusbar(FALSE, _("f=%s, l%d, c%d"),
-		//editor->document->file_name, line+1, byte_line_len+1 );
-
 	char* content = sci_get_contents(editor->sci, sci_get_length(editor->sci)+1+1);
 	content[sci_get_length(editor->sci)] = ' '; // replace null -> virtual space for clang
 	content[sci_get_length(editor->sci)] = '\0';
@@ -141,10 +138,18 @@ static bool check_trigger_char(GeanyEditor *editor) {
 	return false;
 }
 
+static bool ckeck_c_or_cpp(GeanyDocument *doc) {
+	switch(doc->file_type->id)
+	{
+		case GEANY_FILETYPES_C: case GEANY_FILETYPES_CPP: return true;
+		default: return false;
+	}
+}
+
 static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
 								 SCNotification *nt, gpointer* user_data)
 {
-	//if( !suggestWindow->isShowing() ) { return FALSE; }
+	if( !ckeck_c_or_cpp(editor->document) ) return FALSE;
 	switch (nt->nmhdr.code)
 	{
 		case SCN_UPDATEUI:
@@ -169,15 +174,11 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
 			break;
 	}
 	return FALSE;
-	//need ? proxy function
-	//return suggestWindow->on_editor_notify(obj, editor, nt);
 }
 
 static void on_document_activate(GObject *obj, GeanyDocument *doc, gpointer user_data)
 {
-	//g_print("change doc");
-	/* TODO check this file is C/C++ */
-	suggestWindow->close();
+	if( suggestWindow ) { suggestWindow->close(); }
 }
 
 PluginCallback plugin_callbacks[] = {
@@ -187,8 +188,6 @@ PluginCallback plugin_callbacks[] = {
 	{NULL,NULL,FALSE,NULL}
 };
 
-
-
 void update_clang_complete_plugin_state() {
 	if( codeCompletion ) {
 		codeCompletion->setOption( get_ClangCompletePluginPref()->compiler_options );
@@ -197,11 +196,11 @@ void update_clang_complete_plugin_state() {
 
 static void force_completion(G_GNUC_UNUSED guint key_id)
 {
-	if( codeCompletion == NULL ) { return; }
-
-	GeanyDocument* doc = document_get_current();
-	if(doc != NULL) {
-		send_complete(doc->editor, 0);
+	if( codeCompletion ) {
+		GeanyDocument* doc = document_get_current();
+		if(doc != NULL) {
+			send_complete(doc->editor, 0);
+		}
 	}
 }
 
@@ -212,8 +211,7 @@ static void init_keybindings()
 
 	GeanyKeyGroup* key_group = plugin_set_key_group(geany_plugin,"clang_complete",COUNT_KB,NULL);
 	keybindings_set_item(key_group,
-		KB_COMPLETE_IDX, force_completion, 0, (GdkModifierType)0,
-		"exec",_("complete"),NULL);
+		KB_COMPLETE_IDX, force_completion, 0, (GdkModifierType)0, "exec",_("complete"),NULL);
 }
 
 extern "C"{

@@ -42,15 +42,22 @@ static CompleteResultType getCursorType(CXCompletionResult& result)
 		return COMPLETE_RESULT_METHOD;
 	case CXCursor_FunctionDecl : case CXCursor_FunctionTemplate:
 		return COMPLETE_RESULT_FUNCTION;
-	case CXCursor_VarDecl:
+	case CXCursor_VarDecl: case CXCursor_EnumConstantDecl:
 		return COMPLETE_RESULT_VAR;
 	case CXCursor_FieldDecl:
 		return COMPLETE_RESULT_MEMBER;
 	case CXCursor_Namespace:
 		return COMPLETE_RESULT_NAMESPACE;
-
+	case CXCursor_MacroDefinition:
+		//return COMPLETE_RESULT_MACRO;
+		return COMPLETE_RESULT_NONE;
+	case CXCursor_EnumDecl:
+		return COMPLETE_RESULT_OTHER;
+	case CXCursor_NotImplemented: //keywords?
+	case CXCursor_ParmDecl: //function arg?
+		return COMPLETE_RESULT_NONE;
 	default:
-		//std::cout<<"unknown chunk"<<  result.CursorKind <<std::endl;
+		std::cout<<"unknown chunk"<<  result.CursorKind <<std::endl;
 		return COMPLETE_RESULT_NONE;
 	}
 }
@@ -157,26 +164,22 @@ public:
 
 	CXTranslationUnit getTranslationUnit(const char* filename, const char* content) {
 		CXTranslationUnit tu;
-		if( tuCache.find(filename) == tuCache.end() ) {
-
+		if( tuCache.find(filename) == tuCache.end() ) {//not found -> create
 			const char** argv = new const char*[commandLineArgs.size()];
-
 			for(size_t i=0; i<commandLineArgs.size(); i++) {
-				//argv[i] = commandLineArgs[i].c_str();
-				argv[i] = commandLineArgs.at(i).c_str();
+				argv[i] = commandLineArgs[i].c_str();
 			}
 
 			CXUnsavedFile f[1];
-			f[0].Filename = filename;
-			f[0].Contents = content;
-			f[0].Length   = strlen(content);
+			f[0].Filename = filename; f[0].Contents = content; f[0].Length = strlen(content);
 
+			//flag on 0x04 0x08 ? (precompile-preamble & caching complete result)
 			tu = clang_parseTranslationUnit(index, filename, argv, commandLineArgs.size(),
 											f, 1, clang_defaultEditingTranslationUnitOptions() );
+
 			if(tu) {
 				tuCache.insert(std::pair<std::string, CXTranslationUnit>(filename, tu));
 			}
-
 			delete [] argv;
 		} else {
 			tu = tuCache[filename];
@@ -202,15 +205,14 @@ public:
 			return;
 		}
 		CXUnsavedFile f[1];
-		f[0].Filename = filename;
-		f[0].Contents = content;
-		f[0].Length   = strlen(content);
+		f[0].Filename = filename; f[0].Contents = content; f[0].Length = strlen(content);
 
 		/* NEED reparse! */
-		clang_reparseTranslationUnit(tu, 0, 0, clang_defaultReparseOptions(tu));
+		clang_reparseTranslationUnit(tu, 1, f, clang_defaultReparseOptions(tu));
 
 		CXCodeCompleteResults* results = clang_codeCompleteAt(tu, filename, line, col,
 			f, 1, clang_defaultCodeCompleteOptions() );
+		std::cout<<"def comp opt="<<clang_defaultCodeCompleteOptions()<<std::endl;
 
 		if(!results) {
 			std::cerr<< "an unexpected error @ clang_codeCompleteAt" <<std::endl;
@@ -227,7 +229,6 @@ public:
 
 				if(r.type != COMPLETE_RESULT_NONE) {
 					getExpression(results->Results[i].CompletionString, r.typedText, r.label);
-					//r.label = r.typedText + ": " + r.label;
 					result.push_back(r);
 				}
 			}
