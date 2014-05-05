@@ -23,8 +23,10 @@
 #include <string>
 #include <vector>
 
-namespace cc {
-	enum CompleteResultType {
+namespace cc
+{
+	enum CompleteResultType
+	{
 		COMPLETE_RESULT_VAR,
 		COMPLETE_RESULT_FUNCTION,
 		COMPLETE_RESULT_CLASS,
@@ -37,14 +39,16 @@ namespace cc {
 		COMPLETE_RESULT_NONE,
 	};
 
-	enum CompleteResultAvailability {
+	enum CompleteResultAvailability
+	{
 		COMPLETE_RESULT_AVAIL_AVAIL,
 		COMPLETE_RESULT_AVAIL_DEPRECATED,
 		COMPLETE_RESULT_AVAIL_NOTAVAIL,
 		COMPLETE_RESULT_AVAIL_NOTACCESS
 	};
 
-	struct CompleteResultRow {
+	struct CompleteResultRow
+	{
 		CompleteResultType type;
 		CompleteResultAvailability availability;
 		std::string typed_text;
@@ -54,14 +58,13 @@ namespace cc {
 		CompleteResultRow();
 	};
 
-
 	typedef std::vector<CompleteResultRow> CodeCompletionResults;
 
-	class CodeCompletion {
+	class CodeCompletion
+	{
 	public:
 		CodeCompletion();
 		~CodeCompletion();
-
 		void setOption(std::vector<std::string>& options);
 		void complete(CodeCompletionResults& result,
 			const char* filename, const char* content, int line, int col, int flag=0);

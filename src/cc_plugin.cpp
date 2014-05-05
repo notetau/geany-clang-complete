@@ -45,7 +45,8 @@ cc::SuggestionWindow* suggestWindow;
 cc::CodeCompletion* codeCompletion;
 ////////////////////////////////////////////////////////////////////////////////////
 
-static int get_completion_position(int* flag=NULL) {
+static int get_completion_position(int* flag=NULL)
+{
 	const char* stop_token = "{}[]#()<>%:;.?*+-/^&∼!=,\\\"\'\t\n ";
 	float xxx;
 	GeanyDocument* doc = document_get_current();
@@ -89,7 +90,6 @@ static void send_complete(GeanyEditor *editor, int flag)
 		editor->document->file_name, content, line+1, byte_line_len+1);
 	//TODO clang's col is byte? character?
 
-
 	clock_t C3 = clock();
 
 	if( pos == sci_get_current_position(editor->sci) ) {
@@ -112,7 +112,8 @@ static void send_complete(GeanyEditor *editor, int flag)
 		(float)(C4 - C3) / CLOCKS_PER_SEC);
 }
 
-static bool check_trigger_char(GeanyEditor *editor) {
+static bool check_trigger_char(GeanyEditor *editor)
+{
 	GeanyFiletype *ft = editor->document->file_type;
 
 	if (ft->id != GEANY_FILETYPES_C && ft->id != GEANY_FILETYPES_CPP) return false;
@@ -151,7 +152,8 @@ static bool check_trigger_char(GeanyEditor *editor) {
 	return false;
 }
 
-static bool ckeck_c_or_cpp(GeanyDocument *doc) {
+static bool ckeck_c_or_cpp(GeanyDocument *doc)
+{
 	switch(doc->file_type->id)
 	{
 		case GEANY_FILETYPES_C: case GEANY_FILETYPES_CPP: return true;
@@ -236,6 +238,7 @@ extern "C"{
 
 		init_keybindings();
 	}
+
 	void plugin_cleanup(void)
 	{
 		if( codeCompletion ) {

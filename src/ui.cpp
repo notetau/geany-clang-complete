@@ -26,21 +26,23 @@
 
 #include "preferences.hpp"
 
-namespace cc{
+namespace cc
+{
+	namespace detail
+	{
+		static void get_note_height(GtkWidget* widget, int* height)
+		{
+			GtkAllocation allocation;
+			gtk_widget_get_allocation(widget, &allocation);
+			if( *height < allocation.height ) { *height = allocation.height; }
+		}
+		static gboolean close_request(GtkWidget *widget, GdkEvent *event, SuggestionWindow* self)
+		{
+			self->close();
+			return FALSE;
+		}
+	}
 
-namespace detail {
-	static void get_note_height(GtkWidget* widget, int* height) {
-		GtkAllocation allocation;
-		gtk_widget_get_allocation(widget, &allocation);
-		if( *height < allocation.height ) { *height = allocation.height; }
-	}
-}
-namespace g_sig {
-	gboolean close_request(GtkWidget *widget, GdkEvent *event, SuggestionWindow* self) {
-		self->close();
-		return FALSE;
-	}
-}
 enum {
 	MODEL_TYPEDTEXT_INDEX = 0,
 	MODEL_LABEL_INDEX = 1,
@@ -48,13 +50,14 @@ enum {
 };
 
 void SuggestionWindow::show_with_filter(
-	const cc::CodeCompletionResults& results, const std::string& filter) {
-
+	const cc::CodeCompletionResults& results, const std::string& filter)
+{
 	this->show(results);
 	this->filter_add(filter);
 }
 
-void SuggestionWindow::move_cursor(bool down) {
+void SuggestionWindow::move_cursor(bool down)
+{
 	GtkTreeIter iter;
 	GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
 	if( gtk_tree_selection_get_selected(selection, NULL, &iter) )
@@ -82,7 +85,8 @@ void SuggestionWindow::move_cursor(bool down) {
 	}
 }
 
-void SuggestionWindow::select_suggestion() {
+void SuggestionWindow::select_suggestion()
+{
 	GtkTreeIter iter;
 	GtkTreeModel *model;
 	GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
@@ -114,13 +118,13 @@ void SuggestionWindow::select_suggestion() {
 		this->close();
 	}
 }
+
 void SuggestionWindow::signal_tree_selection(
 	GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColumn *column,
 	SuggestionWindow* self)
 {
 	self->select_suggestion();
 }
-
 
 gboolean SuggestionWindow::signal_key_press_and_release(
 		GtkWidget *widget, GdkEventKey *event, SuggestionWindow* self)
@@ -153,7 +157,8 @@ gboolean SuggestionWindow::signal_key_press_and_release(
 	}
 }
 
-void SuggestionWindow::do_filtering() {
+void SuggestionWindow::do_filtering()
+{
 	if( !this->isShowing() ) { return; }
 
 	GtkTreeIter iter;
@@ -187,7 +192,8 @@ void SuggestionWindow::do_filtering() {
 
 }
 
-void SuggestionWindow::filter_backspace() {
+void SuggestionWindow::filter_backspace()
+{
 	if( this->isShowing() ) {
 		if( filtered_str.empty() ) {
 			this->close();
@@ -199,7 +205,8 @@ void SuggestionWindow::filter_backspace() {
 	}
 }
 
-void SuggestionWindow::filter_add(int ch) {
+void SuggestionWindow::filter_add(int ch)
+{
 	if( this->isShowing() ) {
 		char buf[8] = {0};
 		g_unichar_to_utf8((gunichar)ch, buf);
@@ -208,7 +215,8 @@ void SuggestionWindow::filter_add(int ch) {
 	}
 }
 
-void SuggestionWindow::filter_add(const std::string& str) {
+void SuggestionWindow::filter_add(const std::string& str)
+{
 	if( this->isShowing() ) {
 		filtered_str += str;
 		do_filtering();
@@ -218,7 +226,8 @@ void SuggestionWindow::filter_add(const std::string& str) {
 //#define CHECK_ARRANGE(fmt, ...) g_print(fmt, __VA_ARGS__)
 #define CHECK_ARRANGE(fmt, ...) {}
 
-void SuggestionWindow::arrange_window() {
+void SuggestionWindow::arrange_window()
+{
 	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
 	// gtk2+
 	GtkRequisition sg_win_size;
@@ -361,11 +370,10 @@ void SuggestionWindow::arrange_window() {
 }
 
 
-void SuggestionWindow::setup_showing(const cc::CodeCompletionResults& results) {
-
-
+void SuggestionWindow::setup_showing(const cc::CodeCompletionResults& results)
+{
 	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
-	g_print("start suggest show %d", pref->row_text_max);
+	CHECK_ARRANGE("start suggest show %d", pref->row_text_max);
 	int max_signature_length = 0;
 	gtk_tree_view_set_model(GTK_TREE_VIEW(tree_view), NULL);
 	gtk_list_store_clear(model);
@@ -393,10 +401,11 @@ void SuggestionWindow::setup_showing(const cc::CodeCompletionResults& results) {
 	gtk_tree_view_column_set_fixed_width(col,
 		max_signature_length * character_width + 10);
 
-	g_print("max_signature_length %d char width %d",  max_signature_length, character_width);
+	CHECK_ARRANGE("max_signature_length %d char width %d",  max_signature_length, character_width);
 }
 
-void SuggestionWindow::show(const cc::CodeCompletionResults& results) {
+void SuggestionWindow::show(const cc::CodeCompletionResults& results)
+{
 	if( !results.empty() ) {
 		if( this->isShowing() ) { //close and show
 			this->close();
@@ -416,8 +425,8 @@ void SuggestionWindow::show(const cc::CodeCompletionResults& results) {
 
 #include "sw_icon_resources.hpp"
 
-
-SuggestionWindow::SuggestionWindow() : showing_flag(false) {
+SuggestionWindow::SuggestionWindow() : showing_flag(false)
+{
 	window = gtk_window_new(GTK_WINDOW_POPUP);
 	gtk_container_set_border_width(GTK_CONTAINER(window), 1);
 	gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
@@ -485,15 +494,25 @@ SuggestionWindow::SuggestionWindow() : showing_flag(false) {
 			G_CALLBACK(signal_key_press_and_release), this);
 	sig_handler_id[1] =
 		g_signal_connect(G_OBJECT(geany_data->main_widgets->window), "focus-out-event",
-			G_CALLBACK(g_sig::close_request), this);
+			G_CALLBACK(detail::close_request), this);
 
 	gtk_widget_realize(tree_view);
 }
 
-SuggestionWindow::~SuggestionWindow() {
+SuggestionWindow::~SuggestionWindow()
+{
 	gtk_widget_destroy(window);
 	g_signal_handler_disconnect(G_OBJECT(geany_data->main_widgets->window), sig_handler_id[0]);
 	g_signal_handler_disconnect(G_OBJECT(geany_data->main_widgets->window), sig_handler_id[1]);
 }
 
+void SuggestionWindow::close()
+{
+	if( showing_flag ) {
+		gtk_widget_hide(tree_view);
+		gtk_widget_hide(window);
+		showing_flag = false;
+	}
 }
+
+} //end namespace cc

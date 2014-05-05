@@ -25,9 +25,24 @@
 //for CodeCompletionResults
 #include "completion.hpp"
 
-namespace cc {
+namespace cc
+{
+	class SuggestionWindow
+	{
+	public:
+		SuggestionWindow();
+		~SuggestionWindow();
 
-	class SuggestionWindow {
+		void filter_add(int ch);
+		void filter_add(const std::string& str);
+
+		void show(const cc::CodeCompletionResults& results);
+		void show_with_filter(const cc::CodeCompletionResults& results, const std::string& filter);
+		void close();
+
+		bool isShowing() const { return showing_flag; }
+		void arrange_window();
+	private:
 		GtkWidget* window;
 		GtkWidget* tree_view;
 		GtkListStore* model;
@@ -45,7 +60,6 @@ namespace cc {
 
 		static gboolean signal_key_press_and_release(
 			GtkWidget *widget, GdkEventKey *event, SuggestionWindow* self);
-
 		static void signal_tree_selection(
 			GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColumn *column,
 			SuggestionWindow* self);
@@ -56,24 +70,6 @@ namespace cc {
 		void do_filtering();
 
 		void setup_showing(const cc::CodeCompletionResults& results);
-	public:
-		void filter_add(int ch);
-		void filter_add(const std::string& str);
-		SuggestionWindow();
-		~SuggestionWindow();
-
-		void show(const cc::CodeCompletionResults& results);
-		void show_with_filter(const cc::CodeCompletionResults& results, const std::string& filter);
-		void close() {
-			if( showing_flag ) {
-				gtk_widget_hide(tree_view);
-				gtk_widget_hide(window);
-				showing_flag = false;
-			}
-		}
-		bool isShowing() const { return showing_flag; }
-
-		void arrange_window();
 	};
 
 }
