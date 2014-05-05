@@ -215,16 +215,19 @@ void SuggestionWindow::filter_add(const std::string& str) {
 	}
 }
 
+//#define CHECK_ARRANGE(fmt, ...) g_print(fmt, __VA_ARGS__)
+#define CHECK_ARRANGE(fmt, ...) {}
+
 void SuggestionWindow::arrange_window() {
 	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
 	// gtk2+
 	GtkRequisition sg_win_size;
 	gtk_widget_size_request(tree_view, &sg_win_size);
-	g_print("sg_win_size(%d, %d)", sg_win_size.width, sg_win_size.height);
+	CHECK_ARRANGE("sg_win_size(%d, %d)", sg_win_size.width, sg_win_size.height);
 	if( sg_win_size.height > pref->suggestion_window_height_max ) {
 		sg_win_size.height = pref->suggestion_window_height_max;
 	}
-	g_print("after, sg_win_size(%d, %d)", sg_win_size.width, sg_win_size.height);
+	CHECK_ARRANGE("after, sg_win_size(%d, %d)", sg_win_size.width, sg_win_size.height);
 	gtk_widget_set_size_request(window, sg_win_size.width, sg_win_size.height);
 	/*
 		in gtk3 use follow?
@@ -242,13 +245,13 @@ void SuggestionWindow::arrange_window() {
 
 	GtkAllocation rect_mainwindow;
 	gtk_widget_get_allocation(main_window, &rect_mainwindow);
-	//g_print("mainwin %d %d %d %d",
-		//rect_mainwindow.x, rect_mainwindow.y, rect_mainwindow.width, rect_mainwindow.height);
+	CHECK_ARRANGE("mainwin %d %d %d %d",
+		rect_mainwindow.x, rect_mainwindow.y, rect_mainwindow.width, rect_mainwindow.height);
 
 	GtkAllocation rect_notebook;
 	gtk_widget_get_allocation(notebook_widget, &rect_notebook);
-	//g_print("notebook %d %d %d %d", rect_notebook.x, rect_notebook.y,
-		//rect_notebook.width, rect_notebook.height);
+	CHECK_ARRANGE("notebook %d %d %d %d",
+		rect_notebook.x, rect_notebook.y, rect_notebook.width, rect_notebook.height);
 
 	int note_height = 0;
 	gtk_container_foreach( GTK_CONTAINER(notebook_widget),
@@ -317,9 +320,9 @@ void SuggestionWindow::arrange_window() {
 	if( 0 <= diff_line && diff_line < screen_lines ) {
 		int total_text_height = diff_line * text_height;
 
-		g_print("x_origin=%d rect_notebook.x=%d margin_w=%d txt_width=%d (x_scroll_offset=%d)",
+		CHECK_ARRANGE("x_origin=%d notebook.x=%d margin_w=%d txt_width=%d (x_scroll_offset=%d)",
 			x_origin, rect_notebook.x, margin_width, text_width, x_scroll_offset);
-		g_print("y_origin=%d rect_notebook.y=%d note_tab_height=%d total_txt_h=%d txt_h%d",
+		CHECK_ARRANGE("y_origin=%d notebook.y=%d note_tab_height=%d total_txt_h=%d txt_h%d",
 			y_origin, rect_notebook.y, note_tab_height, total_text_height, text_height);
 
 		show_x = x_origin + rect_notebook.x + margin_width + text_width - x_scroll_offset;
@@ -337,7 +340,7 @@ void SuggestionWindow::arrange_window() {
 	int monitor_id = gdk_screen_get_monitor_at_window(gdk_screen, gdk_window);
 	GdkRectangle mon_rect;
 	gdk_screen_get_monitor_geometry (gdk_screen, monitor_id, &mon_rect);
-	g_print("%d %d %d %d", mon_rect.x, mon_rect.y, mon_rect.width,mon_rect.height );
+	CHECK_ARRANGE("%d %d %d %d", mon_rect.x, mon_rect.y, mon_rect.width,mon_rect.height );
 
 	//check vert
 	if( show_y + sg_win_size.height > mon_rect.y + mon_rect.height ) {
