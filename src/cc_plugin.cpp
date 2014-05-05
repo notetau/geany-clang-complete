@@ -67,6 +67,7 @@ static int get_completion_position(int* flag=NULL) {
 static void send_complete(GeanyEditor *editor, int flag)
 {
 	if( codeCompletion == NULL ) { return; }
+	if( !editor->document->real_path ) { return; }
 	int pos = get_completion_position();
 	if( pos == 0 ) { return; } //nothing to complete
 
@@ -75,13 +76,21 @@ static void send_complete(GeanyEditor *editor, int flag)
 	int byte_line_len = pos - ls_pos;
 	if( byte_line_len < 0 ) { return; }
 
+	clock_t C1 = clock();
+
 	char* content = sci_get_contents(editor->sci, sci_get_length(editor->sci)+1+1);
 	content[sci_get_length(editor->sci)] = ' '; // replace null -> virtual space for clang
 	content[sci_get_length(editor->sci)] = '\0';
+
+	clock_t C2 = clock();
+
 	cc::CodeCompletionResults results;
 	codeCompletion->complete(results,
 		editor->document->file_name, content, line+1, byte_line_len+1);
 	//TODO clang's col is byte? character?
+
+
+	clock_t C3 = clock();
 
 	if( pos == sci_get_current_position(editor->sci) ) {
 		suggestWindow->show(results);
@@ -95,8 +104,12 @@ static void send_complete(GeanyEditor *editor, int flag)
 		suggestWindow->show_with_filter(results, filter);
 		delete [] filter;
 	}
-
+	clock_t C4 = clock();
 	g_free(content);
+	g_print("time %f %f %f",
+		(float)(C2 - C1) / CLOCKS_PER_SEC,
+		(float)(C3 - C2) / CLOCKS_PER_SEC,
+		(float)(C4 - C3) / CLOCKS_PER_SEC);
 }
 
 static bool check_trigger_char(GeanyEditor *editor) {

@@ -37,11 +37,23 @@ namespace cc {
 		COMPLETE_RESULT_NONE,
 	};
 
+	enum CompleteResultAvailability {
+		COMPLETE_RESULT_AVAIL_AVAIL,
+		COMPLETE_RESULT_AVAIL_DEPRECATED,
+		COMPLETE_RESULT_AVAIL_NOTAVAIL,
+		COMPLETE_RESULT_AVAIL_NOTACCESS
+	};
+
 	struct CompleteResultRow {
 		CompleteResultType type;
-		std::string label;
-		std::string typedText;
+		CompleteResultAvailability availability;
+		std::string typed_text;
+		std::string return_type;
+		std::string arguments;
+		std::string signature;
+		CompleteResultRow();
 	};
+
 
 	typedef std::vector<CompleteResultRow> CodeCompletionResults;
 

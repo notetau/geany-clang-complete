@@ -363,16 +363,17 @@ void SuggestionWindow::arrange_window() {
 
 void SuggestionWindow::setup_showing(const cc::CodeCompletionResults& results) {
 
+
 	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
 	g_print("start suggest show %d", pref->row_text_max);
-
 	int max_signature_length = 0;
 	gtk_tree_view_set_model(GTK_TREE_VIEW(tree_view), NULL);
 	gtk_list_store_clear(model);
+
 	GtkTreeIter iter;
 	for(size_t i = 0; i < results.size(); i++) {
-		const char* typedtext = results[i].typedText.c_str();
-		std::string labelstdstr = results[i].label;
+		const char* typedtext = results[i].typed_text.c_str();
+		std::string labelstdstr = results[i].signature;
 		if( labelstdstr.length() > pref->row_text_max ) {
 			labelstdstr = labelstdstr.substr(0, pref->row_text_max);
 		}
@@ -386,6 +387,7 @@ void SuggestionWindow::setup_showing(const cc::CodeCompletionResults& results) {
 			max_signature_length = labelstdstr.length();
 		}
 	}
+
 	gtk_tree_view_set_model(GTK_TREE_VIEW(tree_view), GTK_TREE_MODEL(model));
 	GtkTreeViewColumn* col = gtk_tree_view_get_column (GTK_TREE_VIEW(tree_view), 1);
 	gtk_tree_view_column_set_fixed_width(col,
@@ -400,7 +402,6 @@ void SuggestionWindow::show(const cc::CodeCompletionResults& results) {
 			this->close();
 		}
 		setup_showing(results);
-
 		arrange_window();
 
 		showing_flag = true;
