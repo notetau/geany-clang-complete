@@ -129,12 +129,11 @@ static bool check_trigger_char(GeanyEditor *editor)
 {
 	int pos = sci_get_current_position(editor->sci);
 	if( pos < 2 ) { return false; }
-	//TODO check pos is in comment
-	char c1 = sci_get_char_at(editor->sci, pos-1);
-	//g_print("typed %d %c",c1, c1);
-	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
-	//triggered . -> ::
 
+	char c1 = sci_get_char_at(editor->sci, pos-1);
+	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
+
+	//triggered by . -> ::
 	int style_id = sci_get_style_at(editor->sci, pos);
 	g_print("style id %d", style_id);
 	switch(style_id){
