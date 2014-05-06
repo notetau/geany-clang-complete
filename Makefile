@@ -8,10 +8,10 @@ endif
 
 LIBNAME = geanyclangcomplete.so
 
-SRCS = cc_plugin.cpp completion.cpp ui.cpp preferences.cpp
+SRCS = cc_plugin.cpp completion.cpp ui.cpp preferences.cpp completion_async.cpp
 OBJS = $(addprefix lib/, $(SRCS:.cpp=.o))
 
-CXXFLAGS += -fPIC `pkg-config --cflags geany` -O2
+CXXFLAGS += -fPIC `pkg-config --cflags geany` -O2 -std=c++11
 LDFLAGS  += -shared `pkg-config --libs geany` -lclang
 
 

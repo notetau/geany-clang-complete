@@ -42,9 +42,13 @@ PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
 #include "ui.hpp"
 #include "preferences.hpp"
 
+#include "completion_async.hpp"
+#include <thread>
+#include <chrono>
 // global variables ////////////////////////////////////////////////////////////////
 cc::SuggestionWindow* suggestWindow;
-cc::CodeCompletion* codeCompletion;
+///cc::CodeCompletion* codeCompletion;
+cc::CodeCompletionAsync* codeCompletion;
 ////////////////////////////////////////////////////////////////////////////////////
 
 static bool is_completion_file_now()
@@ -99,9 +103,15 @@ static void send_complete(GeanyEditor *editor, int flag)
 	clock_t C2 = clock();
 
 	cc::CodeCompletionResults results;
-	codeCompletion->complete(results,
-		editor->document->file_name, content, line+1, byte_line_len+1);
+	///codeCompletion->complete(results,
+	///	editor->document->file_name, content, line+1, byte_line_len+1);
 	//TODO clang's col is byte? character?
+	codeCompletion->complete_async(editor->document->file_name, content, line+1, byte_line_len+1);
+
+	while(!codeCompletion->try_get_results(results)) {
+		std::this_thread::sleep_for( std::chrono::milliseconds(500) );
+	}
+
 
 	clock_t C3 = clock();
 
@@ -211,7 +221,8 @@ PluginCallback plugin_callbacks[] = {
 
 void update_clang_complete_plugin_state() {
 	if( codeCompletion ) {
-		codeCompletion->setOption( get_ClangCompletePluginPref()->compiler_options );
+		///codeCompletion->setOption( get_ClangCompletePluginPref()->compiler_options );
+		codeCompletion->set_option( get_ClangCompletePluginPref()->compiler_options );
 	}
 }
 
@@ -224,6 +235,16 @@ static void force_completion(G_GNUC_UNUSED guint key_id)
 		}
 	}
 }
+
+/**
+ * check ready to show
+*/
+static gboolean loop_check_ready(gpointer user_data)
+{
+	if( codeCompletion ) {
+	}
+}
+
 
 static void init_keybindings()
 {
@@ -238,7 +259,9 @@ static void init_keybindings()
 extern "C"{
 	void plugin_init(GeanyData *data)
 	{
-		codeCompletion = new cc::CodeCompletion();
+		///codeCompletion = new cc::CodeCompletion();
+		codeCompletion = new cc::CodeCompletionAsync();
+		plugin_timeout_add(geany_plugin, 20, loop_check_ready, NULL);
 		suggestWindow = new cc::SuggestionWindow();
 		get_ClangCompletePluginPref()->load_preferences();
 
