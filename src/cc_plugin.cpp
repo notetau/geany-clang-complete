@@ -158,7 +158,8 @@ static bool check_trigger_char(GeanyEditor *editor)
 	}
 	if( pref->start_completion_with_dot ) {
 		 if(c1 == '.') {
-			//int c0styleID = sci_get_style_at(editor->sci, pos-2);
+			int c0_style_id = sci_get_style_at(editor->sci, pos-1);
+			if( c0_style_id == SCE_C_NUMBER ) { return false; }
 			/* TODO ignore 0 omitted floating number such as ".123" */
 			return true;
 		}
