@@ -96,22 +96,22 @@ void SuggestionWindow::select_suggestion()
 		gtk_tree_model_get(model, &iter, MODEL_TYPEDTEXT_INDEX, &typedtext, -1);
 
 		int dist = strlen(typedtext) - filtered_str.length();
-		if( dist == 0 ) {
-			/* do nothing */
-		}
-		else if( dist < 0 ){
+
+		if( dist < 0 ){
 			g_printerr("assert SuggestionWindow::select_suggestion()");
 		}
 		else {
-			g_print ("will insert %s (%s)\n", typedtext, &typedtext[filtered_str.length()]);
-			GeanyDocument* doc = document_get_current();
-			if(doc != NULL) {
-				ScintillaObject* sci = doc->editor->sci;
-				int cur_pos = sci_get_current_position(sci);
-				int added_byte = filtered_str.length();
-				sci_set_selection_start(sci, cur_pos - added_byte);
-				sci_set_selection_end(sci, cur_pos);
-				sci_replace_sel(sci, typedtext);
+			if( dist != 0 || filtered_str.compare(typedtext) != 0 ) {
+				g_print ("will insert %s (%s)\n", typedtext, &typedtext[filtered_str.length()]);
+				GeanyDocument* doc = document_get_current();
+				if(doc != NULL) {
+					ScintillaObject* sci = doc->editor->sci;
+					int cur_pos = sci_get_current_position(sci);
+					int added_byte = filtered_str.length();
+					sci_set_selection_start(sci, cur_pos - added_byte);
+					sci_set_selection_end(sci, cur_pos);
+					sci_replace_sel(sci, typedtext);	/* do nothing */
+				}
 			}
 		}
 		g_free (typedtext);
