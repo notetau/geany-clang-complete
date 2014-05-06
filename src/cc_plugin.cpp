@@ -36,6 +36,8 @@ PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
 #include <vector>
 #include <string.h>
 
+#include <SciLexer.h>
+
 #include "completion.hpp"
 #include "ui.hpp"
 #include "preferences.hpp"
@@ -44,6 +46,17 @@ PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
 cc::SuggestionWindow* suggestWindow;
 cc::CodeCompletion* codeCompletion;
 ////////////////////////////////////////////////////////////////////////////////////
+
+static bool is_completion_file_now()
+{
+	GeanyDocument* doc = document_get_current();
+	if(doc == NULL) { return false; }
+	if( !doc->real_path ) { return false; }
+	GeanyFiletype *ft = doc->file_type;
+	if(ft == NULL) { return false; }
+	if (ft->id != GEANY_FILETYPES_C && ft->id != GEANY_FILETYPES_CPP) { return false; }
+	return true;
+}
 
 static int get_completion_position(int* flag=NULL)
 {
@@ -68,7 +81,7 @@ static int get_completion_position(int* flag=NULL)
 static void send_complete(GeanyEditor *editor, int flag)
 {
 	if( codeCompletion == NULL ) { return; }
-	if( !editor->document->real_path ) { return; }
+	if( !is_completion_file_now() ) { return; }
 	int pos = get_completion_position();
 	if( pos == 0 ) { return; } //nothing to complete
 
@@ -114,10 +127,6 @@ static void send_complete(GeanyEditor *editor, int flag)
 
 static bool check_trigger_char(GeanyEditor *editor)
 {
-	GeanyFiletype *ft = editor->document->file_type;
-
-	if (ft->id != GEANY_FILETYPES_C && ft->id != GEANY_FILETYPES_CPP) return false;
-
 	int pos = sci_get_current_position(editor->sci);
 	if( pos < 2 ) { return false; }
 	//TODO check pos is in comment
@@ -125,10 +134,15 @@ static bool check_trigger_char(GeanyEditor *editor)
 	//g_print("typed %d %c",c1, c1);
 	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
 	//triggered . -> ::
-	//g_print("setting start_with %d %d %d",
-		//pref->start_completion_with_dot,
-		//pref->start_completion_with_arrow,
-		//pref->start_completion_with_scope_res);
+
+	int style_id = sci_get_style_at(editor->sci, pos);
+	g_print("style id %d", style_id);
+	switch(style_id){
+		case SCE_C_COMMENTLINE: case SCE_C_COMMENT:
+		case SCE_C_COMMENTLINEDOC: case SCE_C_COMMENTDOC:
+		case SCE_C_STRINGEOL:
+			return false;
+	}
 
 	if( pref->start_completion_with_scope_res ) {
 		if(c1 == ':') {
@@ -152,19 +166,11 @@ static bool check_trigger_char(GeanyEditor *editor)
 	return false;
 }
 
-static bool ckeck_c_or_cpp(GeanyDocument *doc)
-{
-	switch(doc->file_type->id)
-	{
-		case GEANY_FILETYPES_C: case GEANY_FILETYPES_CPP: return true;
-		default: return false;
-	}
-}
 
 static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
 								 SCNotification *nt, gpointer* user_data)
 {
-	if( !ckeck_c_or_cpp(editor->document) ) return FALSE;
+	if( !is_completion_file_now() ) { return FALSE; }
 	switch (nt->nmhdr.code)
 	{
 		case SCN_UPDATEUI:

@@ -57,8 +57,8 @@ static CompleteResultType getCursorType(const CXCompletionResult& result)
 	case CXCursor_Namespace:
 		return COMPLETE_RESULT_NAMESPACE;
 	case CXCursor_MacroDefinition:
-		//return COMPLETE_RESULT_MACRO;
-		return COMPLETE_RESULT_NONE;
+		return COMPLETE_RESULT_MACRO;
+		//return COMPLETE_RESULT_NONE;
 	case CXCursor_EnumDecl:
 		return COMPLETE_RESULT_OTHER;
 	case CXCursor_NotImplemented: //keywords?
@@ -73,6 +73,7 @@ static CompleteResultType getCursorType(const CXCompletionResult& result)
 struct CompletionStringParser
 {
 	CompleteResultRow* r;
+	std::string text;
 	int enter_optional_count;
 	int enter_arguments;
 
@@ -129,7 +130,7 @@ struct CompletionStringParser
 			case CXCompletionChunk_TypedText:  append(r->typed_text, comp_str, i);  break;
 			case CXCompletionChunk_ResultType: append(r->return_type, comp_str, i); break;
 			case CXCompletionChunk_Placeholder:      look(comp_str, i); break;
-			case CXCompletionChunk_Text:             look(comp_str, i); break;
+			case CXCompletionChunk_Text:             append(text, comp_str, i); break;
 			case CXCompletionChunk_Informative:      look(comp_str, i); break;
 			case CXCompletionChunk_CurrentParameter: look(comp_str, i); break;
 			case CXCompletionChunk_LeftParen:   enter_arguments += 1; look(" ("); break;
@@ -158,7 +159,7 @@ struct CompletionStringParser
 		r->type = getCursorType(result);
 		enter_optional_count = 0;
 		enter_arguments = 0;
-
+		text = "";
 		do_parse(comp_str);
 
 		r->signature.insert(0, r->typed_text);
@@ -166,6 +167,11 @@ struct CompletionStringParser
 		if( r->return_type != "" ) {
 			r->signature += " -> ";
 			r->signature += r->return_type;
+		}
+		if( text != "" ) {
+			r->signature += " {";
+			r->signature += text;
+			r->signature += "}";
 		}
 	}
 };
