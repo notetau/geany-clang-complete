@@ -49,12 +49,6 @@ enum {
 	MODEL_TYPE_INDEX = 2
 };
 
-void SuggestionWindow::show_with_filter(
-	const cc::CodeCompletionResults& results, const std::string& filter)
-{
-	this->show(results);
-	this->filter_add(filter);
-}
 
 void SuggestionWindow::move_cursor(bool down)
 {
@@ -97,23 +91,18 @@ void SuggestionWindow::select_suggestion()
 
 		int dist = strlen(typedtext) - filtered_str.length();
 
-		if( dist < 0 ){
-			g_printerr("assert SuggestionWindow::select_suggestion()");
-		}
-		else {
-			if( dist != 0 || filtered_str.compare(typedtext) != 0 ) {
-				g_print ("will insert %s (%s)\n", typedtext, &typedtext[filtered_str.length()]);
-				GeanyDocument* doc = document_get_current();
-				if(doc != NULL) {
-					ScintillaObject* sci = doc->editor->sci;
-					int cur_pos = sci_get_current_position(sci);
-					int added_byte = filtered_str.length();
-					sci_set_selection_start(sci, cur_pos - added_byte);
-					sci_set_selection_end(sci, cur_pos);
-					sci_replace_sel(sci, typedtext);	/* do nothing */
-				}
+		if( dist != 0 || filtered_str.compare(typedtext) != 0 ) {
+			GeanyDocument* doc = document_get_current();
+			if(doc != NULL) {
+				ScintillaObject* sci = doc->editor->sci;
+				int cur_pos = sci_get_current_position(sci);
+				int added_byte = filtered_str.length();
+				sci_set_selection_start(sci, cur_pos - added_byte);
+				sci_set_selection_end(sci, cur_pos);
+				sci_replace_sel(sci, typedtext);	/* do nothing */
 			}
 		}
+
 		g_free (typedtext);
 		this->close();
 	}
@@ -143,9 +132,9 @@ gboolean SuggestionWindow::signal_key_press_and_release(
 	case GDK_KEY_Return: case GDK_KEY_KP_Enter:
 		self->select_suggestion();
 		return TRUE;
-	case GDK_KEY_BackSpace:
-		self->filter_backspace();
-		return FALSE; /* editor will delete a char. */
+	//case GDK_KEY_BackSpace:
+		//self->filter_backspace();
+		//return FALSE; /* editor will delete a char. */
 	//case GDK_KEY_Delete: case GDK_KEY_KP_Delete:
 	case GDK_KEY_Escape:
 	case GDK_KEY_Right: case GDK_KEY_KP_Right:
@@ -404,7 +393,9 @@ void SuggestionWindow::setup_showing(const cc::CodeCompletionResults& results)
 	CHECK_ARRANGE("max_signature_length %d char width %d",  max_signature_length, character_width);
 }
 
-void SuggestionWindow::show(const cc::CodeCompletionResults& results)
+
+void SuggestionWindow::show(
+	const cc::CodeCompletionResults& results, const char* initial_filter)
 {
 	if( !results.empty() ) {
 		if( this->isShowing() ) { //close and show
@@ -420,6 +411,10 @@ void SuggestionWindow::show(const cc::CodeCompletionResults& results)
 		gtk_widget_show(window);
 		/* call after gtk_widget_show */
 		gtk_tree_view_scroll_to_point(GTK_TREE_VIEW(tree_view), 0, 0);
+
+		if(initial_filter) {
+			this->filter_add(initial_filter);
+		}
 	}
 }
 

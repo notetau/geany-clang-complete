@@ -47,8 +47,15 @@ PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
 #include <chrono>
 // global variables ////////////////////////////////////////////////////////////////
 cc::SuggestionWindow* suggestWindow;
+
 ///cc::CodeCompletion* codeCompletion;
 cc::CodeCompletionAsync* codeCompletion;
+
+static struct {
+	bool valid;
+	int start_pos;
+	std::string text;
+} edit_tracker;
 ////////////////////////////////////////////////////////////////////////////////////
 
 static bool is_completion_file_now()
@@ -115,18 +122,16 @@ static void send_complete(GeanyEditor *editor, int flag)
 
 	clock_t C3 = clock();
 
-	if( pos == sci_get_current_position(editor->sci) ) {
-		suggestWindow->show(results);
-	}
-	else {
+	edit_tracker.valid = true;
+	edit_tracker.start_pos = pos;
+	edit_tracker.text.clear();
+
+	if( pos != sci_get_current_position(editor->sci) ) {
 		int len = sci_get_current_position(editor->sci) - pos;
-		char* filter = new char[len+1];
-		std::copy(content + pos, content + pos + len, filter);
-		filter[len] = '\0';
-		//g_print("%s", filter);
-		suggestWindow->show_with_filter(results, filter);
-		delete [] filter;
+		edit_tracker.text.append(content + pos, len);
 	}
+	suggestWindow->show(results, edit_tracker.text.c_str());
+
 	clock_t C4 = clock();
 	g_free(content);
 	g_print("time %f %f %f",
@@ -145,7 +150,6 @@ static bool check_trigger_char(GeanyEditor *editor)
 
 	//triggered by . -> ::
 	int style_id = sci_get_style_at(editor->sci, pos);
-	g_print("style id %d", style_id);
 	switch(style_id){
 		case SCE_C_COMMENTLINE: case SCE_C_COMMENT:
 		case SCE_C_COMMENTLINEDOC: case SCE_C_COMMENTDOC:
@@ -176,13 +180,12 @@ static bool check_trigger_char(GeanyEditor *editor)
 	return false;
 }
 
-
 static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
 								 SCNotification *nt, gpointer* user_data)
 {
 	if( !is_completion_file_now() ) { return FALSE; }
 	switch (nt->nmhdr.code)
-	{
+	{//how to catch folding -+
 		case SCN_UPDATEUI:
 			//TODO relocation suggestion window when typings occur scroll (e.g. editting long line)
 			if(nt->updated & SC_UPDATE_SELECTION) {
@@ -190,16 +193,38 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
 			}
 			break;
 		case SCN_MODIFIED:
-			break;
-		case SCN_CHARADDED:
-			{
-				suggestWindow->filter_add(nt->ch);
-				if( check_trigger_char(editor) ) {
-					send_complete(editor, FALSE);
+			//report before insert position, after delete position
+			if( edit_tracker.valid ) {
+				if(nt->modificationType & SC_MOD_INSERTTEXT) {
+					if( nt->position == edit_tracker.start_pos + edit_tracker.text.length() ) {
+						std::string text(nt->text, nt->length); // nt->text is not null term?
+						edit_tracker.text += text;
+						suggestWindow->filter_add(text.c_str());
+					}
+					else {
+						edit_tracker.valid = false;
+						suggestWindow->close();
+					}
+				}
+				if(nt->modificationType & SC_MOD_DELETETEXT) {
+					//it was caused by backspace?
+					if( nt->length == 1 &&
+						edit_tracker.text.length() > 0 &&
+						nt->position + 1 == edit_tracker.start_pos + edit_tracker.text.length() ) {
+						edit_tracker.text.erase(edit_tracker.text.size() - 1);
+						suggestWindow->filter_backspace();
+					}
+					else {
+						edit_tracker.valid = false;
+						suggestWindow->close();
+					}
 				}
 			}
 			break;
-		case SCN_CALLTIPCLICK:
+		case SCN_CHARADDED:
+			if( check_trigger_char(editor) ) {
+				send_complete(editor, FALSE);
+			}
 			break;
 		default:
 			break;
@@ -219,7 +244,8 @@ PluginCallback plugin_callbacks[] = {
 	{NULL,NULL,FALSE,NULL}
 };
 
-void update_clang_complete_plugin_state() {
+void update_clang_complete_plugin_state()
+{
 	if( codeCompletion ) {
 		///codeCompletion->setOption( get_ClangCompletePluginPref()->compiler_options );
 		codeCompletion->set_option( get_ClangCompletePluginPref()->compiler_options );
@@ -250,7 +276,6 @@ static void init_keybindings()
 {
 	const int COUNT_KB = 1;
 	const int KB_COMPLETE_IDX = 0;
-
 	GeanyKeyGroup* key_group = plugin_set_key_group(geany_plugin,"clang_complete",COUNT_KB,NULL);
 	keybindings_set_item(key_group,
 		KB_COMPLETE_IDX, force_completion, 0, (GdkModifierType)0, "exec",_("complete"),NULL);
@@ -266,6 +291,8 @@ extern "C"{
 		get_ClangCompletePluginPref()->load_preferences();
 
 		init_keybindings();
+
+		edit_tracker.valid = false;
 	}
 
 	void plugin_cleanup(void)
@@ -281,5 +308,3 @@ extern "C"{
 		cleanup_ClangCompletePluginPref();
 	}
 }
-
-

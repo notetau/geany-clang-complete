@@ -35,9 +35,10 @@ namespace cc
 
 		void filter_add(int ch);
 		void filter_add(const std::string& str);
+		void filter_backspace();
 
-		void show(const cc::CodeCompletionResults& results);
-		void show_with_filter(const cc::CodeCompletionResults& results, const std::string& filter);
+		void show(const cc::CodeCompletionResults& results, const char* initial_filter = NULL);
+		//void show_with_filter(const cc::CodeCompletionResults& results, const std::string& filter);
 		void close();
 
 		bool isShowing() const { return showing_flag; }
@@ -66,7 +67,6 @@ namespace cc
 
 		void move_cursor(bool down);
 		void select_suggestion();
-		void filter_backspace();
 		void do_filtering();
 
 		void setup_showing(const cc::CodeCompletionResults& results);
