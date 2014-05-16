@@ -119,7 +119,6 @@ static void send_complete(GeanyEditor *editor, int flag)
 		std::this_thread::sleep_for( std::chrono::milliseconds(500) );
 	}
 
-
 	clock_t C3 = clock();
 
 	edit_tracker.valid = true;
@@ -185,7 +184,7 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
 {
 	if( !is_completion_file_now() ) { return FALSE; }
 	switch (nt->nmhdr.code)
-	{//how to catch folding -+
+	{
 		case SCN_UPDATEUI:
 			//TODO relocation suggestion window when typings occur scroll (e.g. editting long line)
 			if(nt->updated & SC_UPDATE_SELECTION) {
@@ -267,8 +266,10 @@ static void force_completion(G_GNUC_UNUSED guint key_id)
 */
 static gboolean loop_check_ready(gpointer user_data)
 {
+	if( !is_completion_file_now() ) { return TRUE; }
 	if( codeCompletion ) {
 	}
+	return TRUE;
 }
 
 

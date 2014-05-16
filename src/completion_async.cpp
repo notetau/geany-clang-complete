@@ -53,7 +53,6 @@ namespace cc
 		bool try_get_results(CodeCompletionResults& results)
 		{
 			if( future_list.empty() ) {
-				std::cerr<< "invalid call try_get_results" <<std::endl;
 				return false;
 			}
 			else {
