@@ -30,7 +30,7 @@ extern "C" {
 PLUGIN_VERSION_CHECK(211)
 
 PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
-	_("0.01"), _("Noto, Yuta <nonotetau@gmail.com>"));
+	_("0.02"), _("Noto, Yuta <nonotetau@gmail.com>"));
 
 #include <string>
 #include <vector>
@@ -57,7 +57,9 @@ static struct {
 	std::string text;
 } edit_tracker;
 ////////////////////////////////////////////////////////////////////////////////////
-
+/**
+	return true if the editing file needs completions, otherwise false. ( is it C/C++ file? )
+ */
 static bool is_completion_file_now()
 {
 	GeanyDocument* doc = document_get_current();
@@ -101,25 +103,14 @@ static void send_complete(GeanyEditor *editor, int flag)
 	int byte_line_len = pos - ls_pos;
 	if( byte_line_len < 0 ) { return; }
 
-	clock_t C1 = clock();
-
 	char* content = sci_get_contents(editor->sci, sci_get_length(editor->sci)+1+1);
 	content[sci_get_length(editor->sci)] = ' '; // replace null -> virtual space for clang
 	content[sci_get_length(editor->sci)] = '\0';
 
-	clock_t C2 = clock();
-
 	cc::CodeCompletionResults results;
-	///codeCompletion->complete(results,
-	///	editor->document->file_name, content, line+1, byte_line_len+1);
+
 	//TODO clang's col is byte? character?
 	codeCompletion->complete_async(editor->document->file_name, content, line+1, byte_line_len+1);
-
-	while(!codeCompletion->try_get_results(results)) {
-		std::this_thread::sleep_for( std::chrono::milliseconds(500) );
-	}
-
-	clock_t C3 = clock();
 
 	edit_tracker.valid = true;
 	edit_tracker.start_pos = pos;
@@ -129,16 +120,14 @@ static void send_complete(GeanyEditor *editor, int flag)
 		int len = sci_get_current_position(editor->sci) - pos;
 		edit_tracker.text.append(content + pos, len);
 	}
-	suggestWindow->show(results, edit_tracker.text.c_str());
+	//suggestWindow->show(results, edit_tracker.text.c_str());
 
-	clock_t C4 = clock();
 	g_free(content);
-	g_print("time %f %f %f",
-		(float)(C2 - C1) / CLOCKS_PER_SEC,
-		(float)(C3 - C2) / CLOCKS_PER_SEC,
-		(float)(C4 - C3) / CLOCKS_PER_SEC);
 }
 
+/**
+	return true if typed . -> :: except for comments and strings, otherwise false.
+ */
 static bool check_trigger_char(GeanyEditor *editor)
 {
 	int pos = sci_get_current_position(editor->sci);
@@ -147,10 +136,9 @@ static bool check_trigger_char(GeanyEditor *editor)
 	char c1 = sci_get_char_at(editor->sci, pos-1);
 	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
 
-	//triggered by . -> ::
 	int style_id = sci_get_style_at(editor->sci, pos);
 	switch(style_id){
-		case SCE_C_COMMENTLINE: case SCE_C_COMMENT:
+		case SCE_C_COMMENTLINE:    case SCE_C_COMMENT:
 		case SCE_C_COMMENTLINEDOC: case SCE_C_COMMENTDOC:
 		case SCE_C_STRINGEOL:
 			return false;
@@ -246,7 +234,6 @@ PluginCallback plugin_callbacks[] = {
 void update_clang_complete_plugin_state()
 {
 	if( codeCompletion ) {
-		///codeCompletion->setOption( get_ClangCompletePluginPref()->compiler_options );
 		codeCompletion->set_option( get_ClangCompletePluginPref()->compiler_options );
 	}
 }
@@ -261,13 +248,16 @@ static void force_completion(G_GNUC_UNUSED guint key_id)
 	}
 }
 
-/**
- * check ready to show
-*/
 static gboolean loop_check_ready(gpointer user_data)
 {
 	if( !is_completion_file_now() ) { return TRUE; }
 	if( codeCompletion ) {
+		cc::CodeCompletionResults results; // allocate at heap, when init?
+		if( codeCompletion->try_get_results(results) ) {
+			if( edit_tracker.valid ) {
+				suggestWindow->show(results, edit_tracker.text.c_str());
+			}
+		}
 	}
 	return TRUE;
 }
