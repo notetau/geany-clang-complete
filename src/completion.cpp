@@ -43,7 +43,7 @@ CompleteResultRow::CompleteResultRow()
 static CompleteResultType getCursorType(const CXCompletionResult& result)
 {
 	switch(result.CursorKind) {
-	case CXCursor_StructDecl: case CXCursor_UnionDecl: case CXCursor_ClassDecl:
+	case CXCursor_StructDecl:  case CXCursor_UnionDecl:     case CXCursor_ClassDecl:
 	case CXCursor_TypedefDecl: case CXCursor_ClassTemplate: case CXCursor_Constructor:
 		return COMPLETE_RESULT_CLASS;
 	case CXCursor_CXXMethod: case CXCursor_Destructor:
@@ -52,20 +52,15 @@ static CompleteResultType getCursorType(const CXCompletionResult& result)
 		return COMPLETE_RESULT_FUNCTION;
 	case CXCursor_VarDecl: case CXCursor_EnumConstantDecl:
 		return COMPLETE_RESULT_VAR;
-	case CXCursor_FieldDecl:
-		return COMPLETE_RESULT_MEMBER;
-	case CXCursor_Namespace:
-		return COMPLETE_RESULT_NAMESPACE;
-	case CXCursor_MacroDefinition:
-		return COMPLETE_RESULT_MACRO;
-		//return COMPLETE_RESULT_NONE;
-	case CXCursor_EnumDecl:
-		return COMPLETE_RESULT_OTHER;
+	case CXCursor_FieldDecl:       return COMPLETE_RESULT_MEMBER;
+	case CXCursor_Namespace:       return COMPLETE_RESULT_NAMESPACE;
+	case CXCursor_MacroDefinition: return COMPLETE_RESULT_MACRO; //return COMPLETE_RESULT_NONE;
+	case CXCursor_EnumDecl:        return COMPLETE_RESULT_OTHER;
 	case CXCursor_NotImplemented: //keywords?
-	case CXCursor_ParmDecl: //function arg?
+	//case CXCursor_ParmDecl: //function arg?
 		return COMPLETE_RESULT_NONE;
 	default:
-		std::cout<<"unknown chunk"<<  result.CursorKind <<std::endl;
+		std::cout<<"unknown chunk"<< result.CursorKind <<std::endl;
 		return COMPLETE_RESULT_NONE;
 	}
 }
@@ -89,7 +84,8 @@ struct CompletionStringParser
 				r->availability = COMPLETE_RESULT_AVAIL_NOTAVAIL;    break;
 			case CXAvailability_NotAccessible:
 				r->availability = COMPLETE_RESULT_AVAIL_NOTACCESS;   break;
-			default: r->availability = COMPLETE_RESULT_AVAIL_NOTAVAIL;   break;
+			default:
+				r->availability = COMPLETE_RESULT_AVAIL_NOTAVAIL;    break;
 		}
 	}
 
@@ -105,13 +101,17 @@ struct CompletionStringParser
 	{
 		CXString text = clang_getCompletionChunkText(comp_str, chunk_idx);
 		const char* cstr = clang_getCString(text);
-		( enter_arguments ? r->arguments : r->signature ) += cstr ? cstr : "";
+		if( cstr ) {
+			r->signature += cstr;
+			if( enter_arguments ) { r->arguments += cstr; }
+		}
 		clang_disposeString(text);
 	}
 
 	template<typename T> void look(T val)
 	{
-		( enter_arguments ? r->arguments : r->signature ) += val;
+		r->signature += val;
+		if( enter_arguments ) { r->arguments += val; }
 	}
 
 	void do_parse(CXCompletionString comp_str)
@@ -154,34 +154,31 @@ struct CompletionStringParser
 	void parse(CompleteResultRow* r, const CXCompletionResult& result)
 	{
 		this->r = r;
+		r->type = getCursorType(result);
 		CXCompletionString comp_str = result.CompletionString;
 		setAveailability(comp_str);
-		r->type = getCursorType(result);
 		enter_optional_count = 0;
 		enter_arguments = 0;
 		text = "";
 		do_parse(comp_str);
-
 		r->signature.insert(0, r->typed_text);
-		r->signature += r->arguments;
 		if( r->return_type != "" ) {
-			r->signature += " -> ";
-			r->signature += r->return_type;
+			r->signature += " -> "; r->signature += r->return_type;
 		}
 		if( text != "" ) {
-			r->signature += " {";
-			r->signature += text;
-			r->signature += "}";
+			r->signature += " {"; r->signature += text; r->signature += "}";
 		}
 	}
 };
+
+
 
 class CodeCompletion::CodeCompletionImpl
 {
 public:
 	CXIndex index;
-	std::map<std::string, CXTranslationUnit> tuCache;
-	std::vector<std::string> commandLineArgs;
+	std::map<std::string, CXTranslationUnit> tu_cache;
+	std::vector<std::string> commandline_args;
 
 	CodeCompletionImpl() : index(NULL)
 	{
@@ -194,7 +191,7 @@ public:
 
 	~CodeCompletionImpl()
 	{
-		clearTranslationUnitCache();
+		clear_translation_unit_cache();
 		clang_disposeIndex(index);
 		std::cout<<"destroyed codecomplete"<<std::endl;
 	}
@@ -202,7 +199,7 @@ public:
 	void create_index()
 	{
 		if(index) {
-			clearTranslationUnitCache();
+			clear_translation_unit_cache();
 			clang_disposeIndex(index);
 			index = NULL;
 		}
@@ -212,47 +209,47 @@ public:
 		}
 	}
 
-	CXTranslationUnit getTranslationUnit(const char* filename, const char* content)
+	CXTranslationUnit get_translation_unit(const char* filename, const char* content)
 	{
 		CXTranslationUnit tu = NULL;
-		if( tuCache.find(filename) != tuCache.end() ) {
-			tu = tuCache[filename];
+		if( tu_cache.find(filename) != tu_cache.end() ) {
+			tu = tu_cache[filename];
 		}
 		else { //not found -> create
-			const char** argv = new const char*[commandLineArgs.size()];
-			for(size_t i=0; i<commandLineArgs.size(); i++) {
-				argv[i] = commandLineArgs[i].c_str();
+			const char** argv = new const char*[commandline_args.size()];
+			for(size_t i=0; i<commandline_args.size(); i++) {
+				argv[i] = commandline_args[i].c_str();
 			}
 			CXUnsavedFile f[1];
 			f[0].Filename = filename; f[0].Contents = content; f[0].Length = strlen(content);
 			tu = clang_parseTranslationUnit(index,
-							filename, argv, commandLineArgs.size(),
+							filename, argv, commandline_args.size(),
 							f, 1, clang_defaultEditingTranslationUnitOptions() );
 			if(tu) {
-				tuCache.insert(std::pair<std::string, CXTranslationUnit>(filename, tu));
+				tu_cache.insert(std::pair<std::string, CXTranslationUnit>(filename, tu));
 			}
 			delete [] argv;
 		}
 		return tu;
 	}
 
-	void clearTranslationUnitCache()
+	void clear_translation_unit_cache()
 	{
-		std::map<std::string, CXTranslationUnit>::iterator it = tuCache.begin();
-		while( it != tuCache.end() ) {
+		std::map<std::string, CXTranslationUnit>::iterator it = tu_cache.begin();
+		while( it != tu_cache.end() ) {
 			if( it->second ) {
 				clang_disposeTranslationUnit(it->second);
 			}
 			++it;
 		}
-		tuCache.clear();
+		tu_cache.clear();
 	}
 
-	void setOption(std::vector<std::string>& options)
+	void set_option(std::vector<std::string>& options)
 	{
-		commandLineArgs.clear();
+		commandline_args.clear();
 		for(size_t i=0; i<options.size(); i++) {
-			commandLineArgs.push_back(options[i]);
+			commandline_args.push_back(options[i]);
 		}
 		create_index();
 	}
@@ -263,7 +260,7 @@ public:
 		if(index == NULL) { return; }
 		result.clear();
 
-		CXTranslationUnit tu = getTranslationUnit(filename, content);
+		CXTranslationUnit tu = get_translation_unit(filename, content);
 		if(!tu) {
 			std::cerr<< "an unexpected error @ clang_parseTranslationUnit" <<std::endl;
 			return;
@@ -288,6 +285,7 @@ public:
 			clang_sortCodeCompletionResults(results->Results, results->NumResults);
 			for(int i=0; i<results->NumResults; i++) {
 				cc::CompleteResultType type = getCursorType(results->Results[i]);
+
 				if(type != COMPLETE_RESULT_NONE) {
 					result.push_back(CompleteResultRow());
 					CompleteResultRow& pr = result[result.size()-1];
@@ -298,29 +296,6 @@ public:
 		}
 
 		clang_disposeCodeCompleteResults(results);
-
-		//unsigned diag_num = clang_codeCompleteGetNumDiagnostics(results);
-		//for(unsigned i = 0; i < diag_num; i++) {
-		//	CXDiagnostic diag = clang_codeCompleteGetDiagnostic(results, i);
-		//	CXString text = clang_formatDiagnostic(diag,
-		//		clang_defaultDiagnosticDisplayOptions());
-		//	const char* str = clang_getCString(text);
-		//	std::cerr<< "diag "<<i<<" "<< str <<std::endl;
-		//	clang_disposeDiagnostic(diag);
-		//	clang_disposeString(text);
-		//}
-
-		//long long cc_context = clang_codeCompleteGetContexts(results);
-		//std::cerr<< "cc_context "<< cc_context <<std::endl;
-
-		// container such as class, struct, ...
-		//unsigned IsIncomplete;
-		//CXCursorKind ckind = clang_codeCompleteGetContainerKind(results, &IsIncomplete);
-		//std::cerr<< "cursor "<< ckind << " iscompleted="<<IsIncomplete<<std::endl;
-		//CXString cxstr = clang_codeCompleteGetContainerUSR(results);
-		//const char* str = clang_getCString(cxstr);
-		//std::cerr<< "usr "<< str <<std::endl;
-		//clang_disposeString(cxstr);
 	}
 
 	//int completeAsync(const char* filename, const char* content, int line, int col);
@@ -330,13 +305,13 @@ private:
 };
 
 
-//CodeCompletion////////////////////////////////////////////////////////////////
+// CodeCompletion //////////////////////////////////////////////////////////////
 CodeCompletion::CodeCompletion() : pimpl(new CodeCompletionImpl()) {}
 CodeCompletion::~CodeCompletion() { delete pimpl; }
 
-void CodeCompletion::setOption(std::vector<std::string>& options)
+void CodeCompletion::set_option(std::vector<std::string>& options)
 {
-	pimpl->setOption(options);
+	pimpl->set_option(options);
 }
 
 void CodeCompletion::complete(CodeCompletionResults& result,
@@ -350,3 +325,78 @@ int CodeCompletion::completeAsync(const char* filename, const char* content, int
 	return 0;
 }
 
+// misc ////////////////////////////////////////////////////////////////////////
+struct CompletionStringParserDebugPrinter
+{
+	void print_cchunk(const char* chunk_name, CXCompletionString comp_str, unsigned chunk_idx) {
+		CXString text = clang_getCompletionChunkText(comp_str, chunk_idx);
+		const char* cstr = clang_getCString(text);
+		printf("{%s, %s}, ", chunk_name, cstr);
+		clang_disposeString(text);
+	}
+
+	void do_parse(CXCompletionString comp_str)
+	{
+		int N = clang_getNumCompletionChunks(comp_str);
+		for(int i = 0; i < N; i++) {
+			CXCompletionChunkKind kind = clang_getCompletionChunkKind(comp_str, i);
+			switch(kind) {
+			case CXCompletionChunk_Optional:
+				printf("{Optional, S}, ");
+				do_parse(clang_getCompletionChunkCompletionString(comp_str, i));
+				printf("{Optional, E}, ");
+				break;
+			case CXCompletionChunk_TypedText:       print_cchunk("TypedText", comp_str, i); break;
+			case CXCompletionChunk_ResultType:      print_cchunk("ResultType", comp_str, i); break;
+			case CXCompletionChunk_Placeholder:     print_cchunk("Placeholder", comp_str, i); break;
+			case CXCompletionChunk_Text:            print_cchunk("Text", comp_str, i); break;
+			case CXCompletionChunk_Informative:     print_cchunk("Info", comp_str, i); break;
+			case CXCompletionChunk_CurrentParameter:print_cchunk("CurParam", comp_str, i); break;
+			case CXCompletionChunk_LeftParen:       print_cchunk("L-Paren", comp_str, i); break;
+			case CXCompletionChunk_RightParen:      print_cchunk("R-Paren", comp_str, i); break;
+			case CXCompletionChunk_LeftBracket:     print_cchunk("L-Bracket", comp_str, i); break;
+			case CXCompletionChunk_RightBracket:    print_cchunk("R-Bracket", comp_str, i); break;
+			case CXCompletionChunk_LeftBrace:       print_cchunk("L-Brace", comp_str, i); break;
+			case CXCompletionChunk_RightBrace:      print_cchunk("R-Brace", comp_str, i); break;
+			case CXCompletionChunk_LeftAngle:       print_cchunk("L-Angle", comp_str, i); break;
+			case CXCompletionChunk_RightAngle:      print_cchunk("R-Angle", comp_str, i); break;
+			case CXCompletionChunk_Comma:           print_cchunk("Comma", comp_str, i); break;
+			case CXCompletionChunk_Colon:           print_cchunk("Colon", comp_str, i); break;
+			case CXCompletionChunk_SemiColon:       print_cchunk("SemiColon", comp_str, i); break;
+			case CXCompletionChunk_Equal:           print_cchunk("Equal", comp_str, i); break;
+			case CXCompletionChunk_HorizontalSpace: print_cchunk("H-Space", comp_str, i); break;
+			case CXCompletionChunk_VerticalSpace:   print_cchunk("V-Space", comp_str, i); break;
+			}
+		}
+	}
+
+	void parse(const CXCompletionResult& result)
+	{
+		CXCompletionString comp_str = result.CompletionString;
+		do_parse(comp_str);
+		printf("\n");
+	}
+};
+
+//unsigned diag_num = clang_codeCompleteGetNumDiagnostics(results);
+//for(unsigned i = 0; i < diag_num; i++) {
+//	CXDiagnostic diag = clang_codeCompleteGetDiagnostic(results, i);
+//	CXString text = clang_formatDiagnostic(diag,
+//		clang_defaultDiagnosticDisplayOptions());
+//	const char* str = clang_getCString(text);
+//	std::cerr<< "diag "<<i<<" "<< str <<std::endl;
+//	clang_disposeDiagnostic(diag);
+//	clang_disposeString(text);
+//}
+
+//long long cc_context = clang_codeCompleteGetContexts(results);
+//std::cerr<< "cc_context "<< cc_context <<std::endl;
+
+// container such as class, struct, ...
+//unsigned IsIncomplete;
+//CXCursorKind ckind = clang_codeCompleteGetContainerKind(results, &IsIncomplete);
+//std::cerr<< "cursor "<< ckind << " iscompleted="<<IsIncomplete<<std::endl;
+//CXString cxstr = clang_codeCompleteGetContainerUSR(results);
+//const char* str = clang_getCString(cxstr);
+//std::cerr<< "usr "<< str <<std::endl;
+//clang_disposeString(cxstr);

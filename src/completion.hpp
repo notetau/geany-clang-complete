@@ -65,7 +65,7 @@ namespace cc
 	public:
 		CodeCompletion();
 		~CodeCompletion();
-		void setOption(std::vector<std::string>& options);
+		void set_option(std::vector<std::string>& options);
 		void complete(CodeCompletionResults& result,
 			const char* filename, const char* content, int line, int col, int flag=0);
 
