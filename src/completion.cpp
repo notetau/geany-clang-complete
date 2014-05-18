@@ -177,8 +177,8 @@ class CodeCompletion::CodeCompletionImpl
 {
 public:
 	CXIndex index;
-	std::map<std::string, CXTranslationUnit> tuCache;
-	std::vector<std::string> commandLineArgs;
+	std::map<std::string, CXTranslationUnit> tu_cache;
+	std::vector<std::string> commandline_args;
 
 	CodeCompletionImpl() : index(NULL)
 	{
@@ -191,7 +191,7 @@ public:
 
 	~CodeCompletionImpl()
 	{
-		clearTranslationUnitCache();
+		clear_translation_unit_cache();
 		clang_disposeIndex(index);
 		std::cout<<"destroyed codecomplete"<<std::endl;
 	}
@@ -199,7 +199,7 @@ public:
 	void create_index()
 	{
 		if(index) {
-			clearTranslationUnitCache();
+			clear_translation_unit_cache();
 			clang_disposeIndex(index);
 			index = NULL;
 		}
@@ -209,47 +209,47 @@ public:
 		}
 	}
 
-	CXTranslationUnit getTranslationUnit(const char* filename, const char* content)
+	CXTranslationUnit get_translation_unit(const char* filename, const char* content)
 	{
 		CXTranslationUnit tu = NULL;
-		if( tuCache.find(filename) != tuCache.end() ) {
-			tu = tuCache[filename];
+		if( tu_cache.find(filename) != tu_cache.end() ) {
+			tu = tu_cache[filename];
 		}
 		else { //not found -> create
-			const char** argv = new const char*[commandLineArgs.size()];
-			for(size_t i=0; i<commandLineArgs.size(); i++) {
-				argv[i] = commandLineArgs[i].c_str();
+			const char** argv = new const char*[commandline_args.size()];
+			for(size_t i=0; i<commandline_args.size(); i++) {
+				argv[i] = commandline_args[i].c_str();
 			}
 			CXUnsavedFile f[1];
 			f[0].Filename = filename; f[0].Contents = content; f[0].Length = strlen(content);
 			tu = clang_parseTranslationUnit(index,
-							filename, argv, commandLineArgs.size(),
+							filename, argv, commandline_args.size(),
 							f, 1, clang_defaultEditingTranslationUnitOptions() );
 			if(tu) {
-				tuCache.insert(std::pair<std::string, CXTranslationUnit>(filename, tu));
+				tu_cache.insert(std::pair<std::string, CXTranslationUnit>(filename, tu));
 			}
 			delete [] argv;
 		}
 		return tu;
 	}
 
-	void clearTranslationUnitCache()
+	void clear_translation_unit_cache()
 	{
-		std::map<std::string, CXTranslationUnit>::iterator it = tuCache.begin();
-		while( it != tuCache.end() ) {
+		std::map<std::string, CXTranslationUnit>::iterator it = tu_cache.begin();
+		while( it != tu_cache.end() ) {
 			if( it->second ) {
 				clang_disposeTranslationUnit(it->second);
 			}
 			++it;
 		}
-		tuCache.clear();
+		tu_cache.clear();
 	}
 
-	void setOption(std::vector<std::string>& options)
+	void set_option(std::vector<std::string>& options)
 	{
-		commandLineArgs.clear();
+		commandline_args.clear();
 		for(size_t i=0; i<options.size(); i++) {
-			commandLineArgs.push_back(options[i]);
+			commandline_args.push_back(options[i]);
 		}
 		create_index();
 	}
@@ -260,7 +260,7 @@ public:
 		if(index == NULL) { return; }
 		result.clear();
 
-		CXTranslationUnit tu = getTranslationUnit(filename, content);
+		CXTranslationUnit tu = get_translation_unit(filename, content);
 		if(!tu) {
 			std::cerr<< "an unexpected error @ clang_parseTranslationUnit" <<std::endl;
 			return;
@@ -309,9 +309,9 @@ private:
 CodeCompletion::CodeCompletion() : pimpl(new CodeCompletionImpl()) {}
 CodeCompletion::~CodeCompletion() { delete pimpl; }
 
-void CodeCompletion::setOption(std::vector<std::string>& options)
+void CodeCompletion::set_option(std::vector<std::string>& options)
 {
-	pimpl->setOption(options);
+	pimpl->set_option(options);
 }
 
 void CodeCompletion::complete(CodeCompletionResults& result,

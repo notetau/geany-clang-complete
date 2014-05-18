@@ -236,7 +236,7 @@ PluginCallback plugin_callbacks[] = {
 void update_clang_complete_plugin_state()
 {
 	if( codeCompletion ) {
-		codeCompletion->setOption( get_ClangCompletePluginPref()->compiler_options );
+		codeCompletion->set_option( get_ClangCompletePluginPref()->compiler_options );
 	}
 }
 
