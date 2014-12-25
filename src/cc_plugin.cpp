@@ -184,7 +184,7 @@ static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
 			if( edit_tracker.valid ) {
 				if(nt->modificationType & SC_MOD_INSERTTEXT) {
 					if( nt->position == edit_tracker.start_pos + edit_tracker.text.length() ) {
-						std::string text(nt->text, nt->length); // nt->text is not null term?
+						std::string text(nt->text, nt->length); // nt->text is not null term
 						edit_tracker.text += text;
 						suggestWindow->filter_add(text.c_str());
 					}

@@ -298,7 +298,6 @@ public:
 		clang_disposeCodeCompleteResults(results);
 	}
 
-	//int completeAsync(const char* filename, const char* content, int line, int col);
 private:
 	CodeCompletionImpl(const CodeCompletionImpl&);
 	void operator=(const CodeCompletionImpl&);

@@ -69,7 +69,6 @@ namespace cc
 		void complete(CodeCompletionResults& result,
 			const char* filename, const char* content, int line, int col, int flag=0);
 
-		int completeAsync(const char* filename, const char* content, int line, int col);
 	private:
 		CodeCompletion(const CodeCompletion&);
 		void operator=(const CodeCompletion&);

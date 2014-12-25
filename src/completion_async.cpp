@@ -24,7 +24,7 @@ namespace cc
 		void set_option(std::vector<std::string>& options)
 		{
 			std::lock_guard<std::mutex> lock(comp_mutex);
-			completion.setOption(options);
+			completion.set_option(options);
 		}
 		void complete_async(
 			const char* filename, const char* content, int line, int col, int flag)
