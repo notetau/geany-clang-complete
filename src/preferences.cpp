@@ -29,12 +29,14 @@
 
 // global preference access interface
 ClangCompletePluginPref* global_ClangCompletePluginPref_instance = NULL;
+
 ClangCompletePluginPref* get_ClangCompletePluginPref() {
 	if( global_ClangCompletePluginPref_instance == NULL ) {
 		global_ClangCompletePluginPref_instance  = new ClangCompletePluginPref();
 	}
 	return global_ClangCompletePluginPref_instance;
 }
+
 void cleanup_ClangCompletePluginPref() {
 	if( global_ClangCompletePluginPref_instance ) {
 		delete global_ClangCompletePluginPref_instance;
@@ -42,9 +44,10 @@ void cleanup_ClangCompletePluginPref() {
 	}
 }
 
+
 void ClangCompletePluginPref::load_default_preferences() {
-	compiler_options.clear(); //none
-	//secondary_compiler_options.clear(); //none
+	compiler_options.clear();
+	//secondary_compiler_options.clear();
 	start_completion_with_dot = true;
 	start_completion_with_arrow = true;
 	start_completion_with_scope_res = true;
@@ -216,7 +219,7 @@ extern "C" {
 	{
 		g_debug("plugin_configure");
 		pref_dialog_changed = false;
-		ClangCompletePluginPref* pref = get_ClangCompletePluginPref();//get_ClangCompletePluginPref();
+		ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
 		GtkWidget* vbox = gtk_vbox_new(FALSE,8);
 
 		GtkWidget* start_with_box = gtk_hbox_new(FALSE,4);
