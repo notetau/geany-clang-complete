@@ -319,11 +319,6 @@ void CodeCompletion::complete(CodeCompletionResults& result,
 	pimpl->complete(result, filename, content, line, col, flag);
 }
 
-int CodeCompletion::completeAsync(const char* filename, const char* content, int line, int col)
-{
-	return 0;
-}
-
 // misc ////////////////////////////////////////////////////////////////////////
 struct CompletionStringParserDebugPrinter
 {
