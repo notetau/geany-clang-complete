@@ -121,7 +121,8 @@ static struct {
 	GtkEntryBuffer* command_buffer;
 } pref_widgets;
 
-static void save_preferences_state() {
+static void save_preferences_state()
+{
 	std::string config_file = get_config_file();
 	GKeyFile *keyfile = g_key_file_new();
 
@@ -174,7 +175,7 @@ static void on_configure_response(GtkDialog *dialog, gint response, gpointer use
 	if (response == GTK_RESPONSE_OK || response == GTK_RESPONSE_APPLY) {
 		g_debug("respon ok");
 		if( pref_dialog_changed ) {
-			g_debug("modify pref");
+			g_print("clang complete: modified preferences\n");
 			pref_dialog_changed = false;
 
 			ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
@@ -216,8 +217,51 @@ static void on_configure_response(GtkDialog *dialog, gint response, gpointer use
 
 static void on_click_exec_button(GtkButton *button, gpointer user_data)
 {
+	std::string output;
+	static const int BUF_SIZE = 512;
+	char buf[BUF_SIZE];
+
 	const gchar* command = gtk_entry_buffer_get_text(pref_widgets.command_buffer);
-	printf("clicked %s\n", command);
+	FILE* fp = popen(command, "r");
+	if(fp) {
+		while(fgets(buf, BUF_SIZE, fp) != NULL) { output += buf; }
+	}
+	pclose(fp);
+
+	// parse the command output
+	std::vector<std::string> options;
+	std::string s = "";
+	int espace = false;
+
+	for(const char* p = output.c_str(); *p != '\0'; ++p) {
+		char c = *p;
+		switch(c) {
+		case '\"': {
+			if(espace) {
+				if(!s.empty()) { options.push_back(s); s = ""; }
+			}
+			espace = !espace;
+		} break;
+		case '\t': case ' ': case '\r': case '\n': {
+			if(espace) {
+				s += c;
+			} else {
+				if(!s.empty()) { options.push_back(s); s = ""; }
+			}
+		} break;
+		default:
+			s += c;
+		}
+	}
+
+	std::string write_str;
+	for(size_t i=0; i<options.size(); i++) {
+		write_str += options[i].c_str();
+		write_str += "\n";
+	}
+	GtkTextIter iter;
+	gtk_text_buffer_get_end_iter(pref_widgets.options_text_buf, &iter);
+	gtk_text_buffer_insert(pref_widgets.options_text_buf, &iter, write_str.c_str(), -1);
 }
 
 extern "C" {
