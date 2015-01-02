@@ -342,7 +342,6 @@ extern "C" {
 
 			gtk_box_pack_start(GTK_BOX(command_box), command_entry, TRUE, TRUE, 1);
 			gtk_box_pack_start(GTK_BOX(command_box), command_exec_button, FALSE, FALSE, 1);
-			//gtk_container_child_set(GTK_CONTAINER(command_box), command_entry, "x-options", GTK_EXPAND, NULL);
 		}
 		gtk_box_pack_start(GTK_BOX(vbox), command_box, FALSE, FALSE, 1);
 
