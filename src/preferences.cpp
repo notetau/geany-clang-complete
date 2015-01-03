@@ -118,9 +118,11 @@ static struct {
 	GtkWidget* row_text_max_spinbtn;
 	GtkWidget* swin_height_max_spinbtn;
 	GtkTextBuffer* options_text_buf;
+	GtkEntryBuffer* command_buffer;
 } pref_widgets;
 
-static void save_preferences_state() {
+static void save_preferences_state()
+{
 	std::string config_file = get_config_file();
 	GKeyFile *keyfile = g_key_file_new();
 
@@ -173,7 +175,7 @@ static void on_configure_response(GtkDialog *dialog, gint response, gpointer use
 	if (response == GTK_RESPONSE_OK || response == GTK_RESPONSE_APPLY) {
 		g_debug("respon ok");
 		if( pref_dialog_changed ) {
-			g_debug("modify pref");
+			g_print("clang complete: modified preferences\n");
 			pref_dialog_changed = false;
 
 			ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
@@ -213,6 +215,55 @@ static void on_configure_response(GtkDialog *dialog, gint response, gpointer use
 	}
 }
 
+static void on_click_exec_button(GtkButton *button, gpointer user_data)
+{
+	std::string output;
+	static const int BUF_SIZE = 512;
+	char buf[BUF_SIZE];
+
+	const gchar* command = gtk_entry_buffer_get_text(pref_widgets.command_buffer);
+	FILE* fp = popen(command, "r");
+	if(fp) {
+		while(fgets(buf, BUF_SIZE, fp) != NULL) { output += buf; }
+	}
+	pclose(fp);
+
+	// parse the command output
+	std::vector<std::string> options;
+	std::string s = "";
+	int espace = false;
+
+	for(const char* p = output.c_str(); *p != '\0'; ++p) {
+		char c = *p;
+		switch(c) {
+		case '\"': {
+			if(espace) {
+				if(!s.empty()) { options.push_back(s); s = ""; }
+			}
+			espace = !espace;
+		} break;
+		case '\t': case ' ': case '\r': case '\n': {
+			if(espace) {
+				s += c;
+			} else {
+				if(!s.empty()) { options.push_back(s); s = ""; }
+			}
+		} break;
+		default:
+			s += c;
+		}
+	}
+
+	std::string write_str;
+	for(size_t i=0; i<options.size(); i++) {
+		write_str += options[i].c_str();
+		write_str += "\n";
+	}
+	GtkTextIter iter;
+	gtk_text_buffer_get_end_iter(pref_widgets.options_text_buf, &iter);
+	gtk_text_buffer_insert(pref_widgets.options_text_buf, &iter, write_str.c_str(), -1);
+}
+
 extern "C" {
 	GtkWidget* plugin_configure(GtkDialog* dialog)
 	{
@@ -220,9 +271,9 @@ extern "C" {
 		pref_dialog_changed = false;
 		ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
 
-		GtkWidget* vbox = gtk_vbox_new(FALSE,8);
+		GtkWidget* vbox = gtk_vbox_new(FALSE, 5);
 
-		GtkWidget* start_with_box = gtk_hbox_new(FALSE,4);
+		GtkWidget* start_with_box = gtk_hbox_new(FALSE, 4);
 		{
 			GtkWidget* start_with_label = gtk_label_new(_("start completion with"));
 
@@ -292,9 +343,10 @@ extern "C" {
 
 		GtkWidget* compiler_options_label =
 			gtk_label_new(_("compiler options (one option per a line)"));
-		gtk_misc_set_alignment(GTK_MISC(compiler_options_label), 0, 0.5);
+		gtk_misc_set_alignment(GTK_MISC(compiler_options_label), 0, 0.8);
 		gtk_box_pack_start (GTK_BOX(vbox), compiler_options_label, FALSE, FALSE, 1);
 
+		// compiler options text area
 		GtkWidget* copt_scrolled_window = gtk_scrolled_window_new(NULL,NULL);
 		gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(copt_scrolled_window),
 			GTK_SHADOW_ETCHED_OUT);
@@ -317,6 +369,26 @@ extern "C" {
 			G_CALLBACK(on_pref_dialog_value_changed), NULL);
 
 		gtk_box_pack_start(GTK_BOX(vbox), copt_scrolled_window, TRUE, TRUE, 5);
+
+		GtkWidget* command_adder_label =
+			gtk_label_new(_("add compiler options from command"));
+		gtk_misc_set_alignment(GTK_MISC(command_adder_label), 0, 0.8);
+		gtk_box_pack_start(GTK_BOX(vbox), command_adder_label, FALSE, FALSE, 1);
+
+		GtkWidget* command_box = gtk_hbox_new(FALSE, 2);
+		{
+			GtkWidget* command_entry = gtk_entry_new();
+			pref_widgets.command_buffer = gtk_entry_get_buffer(GTK_ENTRY(command_entry));
+			gtk_entry_set_width_chars(GTK_ENTRY(command_entry), 30);
+			GtkWidget * command_exec_button = gtk_button_new_with_label("execute");
+			g_signal_connect(command_exec_button, "clicked",
+					G_CALLBACK(on_click_exec_button), NULL);
+
+			gtk_box_pack_start(GTK_BOX(command_box), command_entry, TRUE, TRUE, 1);
+			gtk_box_pack_start(GTK_BOX(command_box), command_exec_button, FALSE, FALSE, 1);
+		}
+		gtk_box_pack_start(GTK_BOX(vbox), command_box, FALSE, FALSE, 1);
+
 
 		g_signal_connect(dialog, "response", G_CALLBACK(on_configure_response), NULL);
 
