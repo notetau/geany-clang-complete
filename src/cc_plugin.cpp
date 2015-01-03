@@ -46,10 +46,10 @@ PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
 #include <thread>
 #include <chrono>
 // global variables ////////////////////////////////////////////////////////////////
-cc::SuggestionWindow* suggestWindow;
+static cc::SuggestionWindow* suggestWindow;
 
 ///cc::CodeCompletion* codeCompletion;
-cc::CodeCompletionAsync* codeCompletion;
+static cc::CodeCompletionAsync* codeCompletion;
 
 static struct {
 	bool valid;
