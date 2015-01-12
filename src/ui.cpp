@@ -418,7 +418,7 @@ void SuggestionWindow::show(
 	}
 }
 
-#include "sw_icon_resources.hpp"
+#include "data/sw_icon_resources.hpp"
 
 SuggestionWindow::SuggestionWindow() : showing_flag(false)
 {
