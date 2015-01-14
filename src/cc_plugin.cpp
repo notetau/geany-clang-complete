@@ -237,6 +237,10 @@ void update_clang_complete_plugin_state()
 	if( completion_framework ) {
 		completion_framework->set_completion_option(get_ClangCompletePluginPref()->compiler_options);
 	}
+	if( suggestWindow ) {
+		suggestWindow->set_max_char_in_row(get_ClangCompletePluginPref()->row_text_max);
+		suggestWindow->set_max_window_height(get_ClangCompletePluginPref()->suggestion_window_height_max);
+	}
 }
 
 static void force_completion(G_GNUC_UNUSED guint key_id)
