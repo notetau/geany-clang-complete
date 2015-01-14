@@ -264,84 +264,85 @@ static void on_click_exec_button(GtkButton *button, gpointer user_data)
 	gtk_text_buffer_insert(pref_widgets.options_text_buf, &iter, write_str.c_str(), -1);
 }
 
+#include "completion_framework.hpp"
+
 #define GETOBJ(name) GTK_WIDGET(gtk_builder_get_object(builder, name))
 
-extern "C" {
-	GtkWidget* plugin_configure(GtkDialog* dialog)
-	{
-		g_debug("code complete: plugin_configure");
-		pref_dialog_changed = false;
-		ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
+GtkWidget* cc::CppCompletionFramework::create_config_widget(GtkDialog* dialog)
+{
+	g_debug("code complete: plugin_configure");
+	pref_dialog_changed = false;
+	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
 
-		GError *err = NULL;
-		GtkBuilder* builder = gtk_builder_new();
-		// defined prefcpp_ui, prefcpp_ui_len
-		#include "data/prefcpp_ui.hpp"
-		gint ret = gtk_builder_add_from_string(builder, (gchar*)prefcpp_ui, prefcpp_ui_len, &err);
-		if(err) {
-			printf("fail to load preference ui: %s\n", err->message);
-			GtkWidget* vbox = gtk_vbox_new(FALSE, 5);
-			return vbox;
-		}
-
-		pref_widgets.start_with_dot = GETOBJ("cbtn_dot");
-		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_dot),
-				pref->start_completion_with_dot);
-		g_signal_connect(pref_widgets.start_with_dot, "toggled",
-			G_CALLBACK(on_pref_dialog_value_changed), NULL);
-
-		pref_widgets.start_with_arrow = GETOBJ("cbtn_arrow");
-		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_arrow),
-				pref->start_completion_with_arrow);
-		g_signal_connect(pref_widgets.start_with_arrow, "toggled",
-			G_CALLBACK(on_pref_dialog_value_changed), NULL);
-
-		pref_widgets.start_with_scope_res = GETOBJ("cbtn_nameres");
-		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_scope_res),
-				pref->start_completion_with_scope_res);
-		g_signal_connect(pref_widgets.start_with_scope_res, "toggled",
-			G_CALLBACK(on_pref_dialog_value_changed), NULL);
-
-		// compiler options
-		GtkWidget* options_text_view = GETOBJ("tv_compileopt");
-		// load compiler options
-		pref_widgets.options_text_buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options_text_view));
-		GtkTextIter iter;
-		gtk_text_buffer_get_iter_at_offset(pref_widgets.options_text_buf, &iter, 0);
-		for(size_t i=0; i<pref->compiler_options.size(); i++) {
-			gtk_text_buffer_insert(
-				pref_widgets.options_text_buf, &iter, pref->compiler_options[i].c_str(), -1);
-			gtk_text_buffer_insert(pref_widgets.options_text_buf, &iter, "\n", -1);
-		}
-		g_signal_connect(pref_widgets.options_text_buf, "changed",
-			G_CALLBACK(on_pref_dialog_value_changed), NULL);
-
-		// get option form command
-		GtkWidget* command_entry = GETOBJ("te_comquery");
-		pref_widgets.command_buffer = gtk_entry_get_buffer(GTK_ENTRY(command_entry));
-
-		GtkWidget* command_exec_button = GETOBJ("btn_runcom");
-		g_signal_connect(command_exec_button, "clicked",
-			G_CALLBACK(on_click_exec_button), NULL);
-
-		// ** suggestion window **
-		pref_widgets.row_text_max_spinbtn = GETOBJ("spin_rowtextmax");
-		gtk_spin_button_set_value(
-			GTK_SPIN_BUTTON(pref_widgets.row_text_max_spinbtn), pref->row_text_max);
-		g_signal_connect(pref_widgets.row_text_max_spinbtn, "value-changed",
-				G_CALLBACK(on_pref_dialog_value_changed), NULL);
-
-		pref_widgets.swin_height_max_spinbtn = GETOBJ("spin_sugwinheight");
-		gtk_spin_button_set_value(
-			GTK_SPIN_BUTTON(pref_widgets.swin_height_max_spinbtn), pref->suggestion_window_height_max);
-		g_signal_connect(pref_widgets.swin_height_max_spinbtn, "value-changed",
-				G_CALLBACK(on_pref_dialog_value_changed), NULL);
-
-		GtkWidget* vbox = GETOBJ("box_prefcpp");
-
-		g_signal_connect(dialog, "response", G_CALLBACK(on_configure_response), NULL);
-
+	GError *err = NULL;
+	GtkBuilder* builder = gtk_builder_new();
+	// defined prefcpp_ui, prefcpp_ui_len
+	#include "data/prefcpp_ui.hpp"
+	gint ret = gtk_builder_add_from_string(builder, (gchar*)prefcpp_ui, prefcpp_ui_len, &err);
+	if(err) {
+		printf("fail to load preference ui: %s\n", err->message);
+		GtkWidget* vbox = gtk_vbox_new(FALSE, 5);
 		return vbox;
 	}
+
+	pref_widgets.start_with_dot = GETOBJ("cbtn_dot");
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_dot),
+			pref->start_completion_with_dot);
+	g_signal_connect(pref_widgets.start_with_dot, "toggled",
+		G_CALLBACK(on_pref_dialog_value_changed), NULL);
+
+	pref_widgets.start_with_arrow = GETOBJ("cbtn_arrow");
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_arrow),
+			pref->start_completion_with_arrow);
+	g_signal_connect(pref_widgets.start_with_arrow, "toggled",
+		G_CALLBACK(on_pref_dialog_value_changed), NULL);
+
+	pref_widgets.start_with_scope_res = GETOBJ("cbtn_nameres");
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_scope_res),
+			pref->start_completion_with_scope_res);
+	g_signal_connect(pref_widgets.start_with_scope_res, "toggled",
+		G_CALLBACK(on_pref_dialog_value_changed), NULL);
+
+	// compiler options
+	GtkWidget* options_text_view = GETOBJ("tv_compileopt");
+	// load compiler options
+	pref_widgets.options_text_buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options_text_view));
+	GtkTextIter iter;
+	gtk_text_buffer_get_iter_at_offset(pref_widgets.options_text_buf, &iter, 0);
+	for(size_t i=0; i<pref->compiler_options.size(); i++) {
+		gtk_text_buffer_insert(
+			pref_widgets.options_text_buf, &iter, pref->compiler_options[i].c_str(), -1);
+		gtk_text_buffer_insert(pref_widgets.options_text_buf, &iter, "\n", -1);
+	}
+	g_signal_connect(pref_widgets.options_text_buf, "changed",
+		G_CALLBACK(on_pref_dialog_value_changed), NULL);
+
+	// get option form command
+	GtkWidget* command_entry = GETOBJ("te_comquery");
+	pref_widgets.command_buffer = gtk_entry_get_buffer(GTK_ENTRY(command_entry));
+
+	GtkWidget* command_exec_button = GETOBJ("btn_runcom");
+	g_signal_connect(command_exec_button, "clicked",
+		G_CALLBACK(on_click_exec_button), NULL);
+
+	// ** suggestion window **
+	pref_widgets.row_text_max_spinbtn = GETOBJ("spin_rowtextmax");
+	gtk_spin_button_set_value(
+		GTK_SPIN_BUTTON(pref_widgets.row_text_max_spinbtn), pref->row_text_max);
+	g_signal_connect(pref_widgets.row_text_max_spinbtn, "value-changed",
+			G_CALLBACK(on_pref_dialog_value_changed), NULL);
+
+	pref_widgets.swin_height_max_spinbtn = GETOBJ("spin_sugwinheight");
+	gtk_spin_button_set_value(
+		GTK_SPIN_BUTTON(pref_widgets.swin_height_max_spinbtn), pref->suggestion_window_height_max);
+	g_signal_connect(pref_widgets.swin_height_max_spinbtn, "value-changed",
+			G_CALLBACK(on_pref_dialog_value_changed), NULL);
+
+	GtkWidget* vbox = GETOBJ("box_prefcpp");
+
+	g_signal_connect(dialog, "response", G_CALLBACK(on_configure_response), NULL);
+
+	return vbox;
 }
+
 

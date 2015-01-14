@@ -51,6 +51,7 @@ static cc::SuggestionWindow* suggestWindow;
 
 static cc::CppCompletionFramework* completion_framework;
 
+
 static struct {
 	bool valid;
 	int start_pos;
@@ -301,5 +302,10 @@ extern "C"{
 			suggestWindow = NULL;
 		}
 		cleanup_ClangCompletePluginPref();
+	}
+
+	GtkWidget* plugin_configure(GtkDialog* dialog)
+	{
+		return completion_framework->create_config_widget(dialog);
 	}
 }
