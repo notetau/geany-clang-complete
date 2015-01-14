@@ -50,7 +50,7 @@ PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
 static cc::SuggestionWindow* suggestWindow;
 
 ///cc::CodeCompletion* codeCompletion;
-static cc::CodeCompletionAsync* codeCompletion;
+//static cc::CodeCompletionAsync* codeCompletion;
 static cc::CppCompletionFramework* completion_framework;
 
 static struct {
@@ -68,7 +68,11 @@ static bool is_completion_file_now()
 	if(doc == NULL) { return false; }
 	if( !doc->real_path ) { return false; }
 
-	return completion_framework->check_filetype(doc->file_type);
+	if(completion_framework) {
+		return completion_framework->check_filetype(doc->file_type);
+	} else {
+		return false;
+	}
 }
 
 static int get_completion_position(int* flag=NULL)
@@ -93,7 +97,7 @@ static int get_completion_position(int* flag=NULL)
 
 static void send_complete(GeanyEditor *editor, int flag)
 {
-	if( codeCompletion == NULL ) { return; }
+	if( completion_framework == NULL ) { return; }
 	if( !is_completion_file_now() ) { return; }
 	int pos = get_completion_position();
 	if( pos == 0 ) { return; } //nothing to complete
@@ -111,7 +115,6 @@ static void send_complete(GeanyEditor *editor, int flag)
 
 	//TODO clang's col is byte? character?
 	completion_framework->complete_async(editor->document->file_name, content, line+1, byte_line_len+1);
-	//codeCompletion->complete_async(editor->document->file_name, content, line+1, byte_line_len+1);
 
 	edit_tracker.valid = true;
 	edit_tracker.start_pos = pos;
@@ -234,15 +237,14 @@ PluginCallback plugin_callbacks[] = {
 
 void update_clang_complete_plugin_state()
 {
-	if( codeCompletion ) {
+	if( completion_framework ) {
 		completion_framework->set_completion_option(get_ClangCompletePluginPref()->compiler_options);
-		//codeCompletion->set_option( get_ClangCompletePluginPref()->compiler_options );
 	}
 }
 
 static void force_completion(G_GNUC_UNUSED guint key_id)
 {
-	if( codeCompletion ) {
+	if( completion_framework ) {
 		GeanyDocument* doc = document_get_current();
 		if(doc != NULL) {
 			send_complete(doc->editor, 0);
@@ -253,10 +255,9 @@ static void force_completion(G_GNUC_UNUSED guint key_id)
 static gboolean loop_check_ready(gpointer user_data)
 {
 	if( !is_completion_file_now() ) { return TRUE; }
-	if( codeCompletion ) {
+	if( completion_framework ) {
 		cc::CodeCompletionResults results; // allocate at heap, when init?
 		if( completion_framework->try_get_completion_results(results) ) {
-		//if( codeCompletion->try_get_results(results) ) {
 			if( edit_tracker.valid ) {
 				suggestWindow->show(results, edit_tracker.text.c_str());
 			}
@@ -280,7 +281,7 @@ extern "C"{
 	{
 		///codeCompletion = new cc::CodeCompletion();
 		completion_framework = new cc::CppCompletionFramework();
-		codeCompletion = new cc::CodeCompletionAsync();
+		//codeCompletion = new cc::CodeCompletionAsync();
 		plugin_timeout_add(geany_plugin, 20, loop_check_ready, NULL);
 		suggestWindow = new cc::SuggestionWindow();
 		get_ClangCompletePluginPref()->load_preferences();
@@ -296,10 +297,10 @@ extern "C"{
 			delete completion_framework;
 			completion_framework = NULL;
 		}
-		if( codeCompletion ) {
-			delete codeCompletion;
-			codeCompletion = NULL;
-		}
+		//~ if( codeCompletion ) {
+			//~ delete codeCompletion;
+			//~ codeCompletion = NULL;
+		//~ }
 		if( suggestWindow ) {
 			delete suggestWindow;
 			suggestWindow = NULL;
