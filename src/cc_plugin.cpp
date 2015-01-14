@@ -49,8 +49,6 @@ PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
 // global variables ////////////////////////////////////////////////////////////////
 static cc::SuggestionWindow* suggestWindow;
 
-///cc::CodeCompletion* codeCompletion;
-//static cc::CodeCompletionAsync* codeCompletion;
 static cc::CppCompletionFramework* completion_framework;
 
 static struct {
@@ -124,7 +122,6 @@ static void send_complete(GeanyEditor *editor, int flag)
 		int len = sci_get_current_position(editor->sci) - pos;
 		edit_tracker.text.append(content + pos, len);
 	}
-	//suggestWindow->show(results, edit_tracker.text.c_str());
 
 	g_free(content);
 }
@@ -279,9 +276,7 @@ static void init_keybindings()
 extern "C"{
 	void plugin_init(GeanyData *data)
 	{
-		///codeCompletion = new cc::CodeCompletion();
 		completion_framework = new cc::CppCompletionFramework();
-		//codeCompletion = new cc::CodeCompletionAsync();
 		plugin_timeout_add(geany_plugin, 20, loop_check_ready, NULL);
 		suggestWindow = new cc::SuggestionWindow();
 		get_ClangCompletePluginPref()->load_preferences();
@@ -297,10 +292,6 @@ extern "C"{
 			delete completion_framework;
 			completion_framework = NULL;
 		}
-		//~ if( codeCompletion ) {
-			//~ delete codeCompletion;
-			//~ codeCompletion = NULL;
-		//~ }
 		if( suggestWindow ) {
 			delete suggestWindow;
 			suggestWindow = NULL;
