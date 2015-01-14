@@ -67,10 +67,8 @@ static bool is_completion_file_now()
 	GeanyDocument* doc = document_get_current();
 	if(doc == NULL) { return false; }
 	if( !doc->real_path ) { return false; }
-	GeanyFiletype *ft = doc->file_type;
-	if(ft == NULL) { return false; }
-	if (ft->id != GEANY_FILETYPES_C && ft->id != GEANY_FILETYPES_CPP) { return false; }
-	return true;
+
+	return completion_framework->check_filetype(doc->file_type);
 }
 
 static int get_completion_position(int* flag=NULL)
