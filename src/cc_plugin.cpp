@@ -110,6 +110,7 @@ static void send_complete(GeanyEditor *editor, int flag)
 	cc::CodeCompletionResults results;
 
 	//TODO clang's col is byte? character?
+	completion_framework->complete_async(editor->document->file_name, content, line+1, byte_line_len+1);
 	codeCompletion->complete_async(editor->document->file_name, content, line+1, byte_line_len+1);
 
 	edit_tracker.valid = true;
@@ -234,6 +235,7 @@ PluginCallback plugin_callbacks[] = {
 void update_clang_complete_plugin_state()
 {
 	if( codeCompletion ) {
+		completion_framework->set_completion_option(get_ClangCompletePluginPref()->compiler_options);
 		codeCompletion->set_option( get_ClangCompletePluginPref()->compiler_options );
 	}
 }
@@ -253,6 +255,7 @@ static gboolean loop_check_ready(gpointer user_data)
 	if( !is_completion_file_now() ) { return TRUE; }
 	if( codeCompletion ) {
 		cc::CodeCompletionResults results; // allocate at heap, when init?
+		completion_framework->try_get_completion_results(results);
 		if( codeCompletion->try_get_results(results) ) {
 			if( edit_tracker.valid ) {
 				suggestWindow->show(results, edit_tracker.text.c_str());
