@@ -45,11 +45,13 @@ PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
 #include "completion_async.hpp"
 #include <thread>
 #include <chrono>
+#include "completion_framework.hpp"
 // global variables ////////////////////////////////////////////////////////////////
 static cc::SuggestionWindow* suggestWindow;
 
 ///cc::CodeCompletion* codeCompletion;
 static cc::CodeCompletionAsync* codeCompletion;
+static cc::CppCompletionFramework* completion_framework;
 
 static struct {
 	bool valid;
@@ -276,6 +278,7 @@ extern "C"{
 	void plugin_init(GeanyData *data)
 	{
 		///codeCompletion = new cc::CodeCompletion();
+		completion_framework = new cc::CppCompletionFramework();
 		codeCompletion = new cc::CodeCompletionAsync();
 		plugin_timeout_add(geany_plugin, 20, loop_check_ready, NULL);
 		suggestWindow = new cc::SuggestionWindow();
@@ -288,6 +291,10 @@ extern "C"{
 
 	void plugin_cleanup(void)
 	{
+		if( completion_framework ) {
+			delete completion_framework;
+			completion_framework = NULL;
+		}
 		if( codeCompletion ) {
 			delete codeCompletion;
 			codeCompletion = NULL;
