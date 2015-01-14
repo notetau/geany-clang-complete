@@ -25,15 +25,27 @@
 
 namespace cc
 {
-	class CodeCompletionAsync
+
+	class CodeCompletionBase
+	{
+	public:
+		CodeCompletionBase() {}
+		virtual ~CodeCompletionBase() {}
+		virtual void set_option(std::vector<std::string>& options) = 0;
+		virtual void complete_async(
+			const char* filename, const char* content, int line, int col, int flag=0)  = 0;
+		virtual bool try_get_results(CodeCompletionResults& result)  = 0;
+	};
+
+	class CodeCompletionAsync : public CodeCompletionBase
 	{
 	public:
 		CodeCompletionAsync();
-		~CodeCompletionAsync();
-		void set_option(std::vector<std::string>& options);
-		void complete_async(
+		virtual ~CodeCompletionAsync();
+		virtual void set_option(std::vector<std::string>& options);
+		virtual void complete_async(
 			const char* filename, const char* content, int line, int col, int flag=0);
-		bool try_get_results(CodeCompletionResults& result);
+		virtual bool try_get_results(CodeCompletionResults& result);
 	private:
 		class CodeCompletionAsyncImpl;
 		CodeCompletionAsyncImpl* pimpl;

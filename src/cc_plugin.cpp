@@ -49,7 +49,8 @@ PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
 static cc::SuggestionWindow* suggestWindow;
 
 ///cc::CodeCompletion* codeCompletion;
-static cc::CodeCompletionAsync* codeCompletion;
+//static cc::CodeCompletionAsync* codeCompletion;
+static cc::CodeCompletionBase* codeCompletion;
 
 static struct {
 	bool valid;
@@ -275,7 +276,6 @@ static void init_keybindings()
 extern "C"{
 	void plugin_init(GeanyData *data)
 	{
-		///codeCompletion = new cc::CodeCompletion();
 		codeCompletion = new cc::CodeCompletionAsync();
 		plugin_timeout_add(geany_plugin, 20, loop_check_ready, NULL);
 		suggestWindow = new cc::SuggestionWindow();
