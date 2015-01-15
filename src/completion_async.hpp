@@ -25,7 +25,7 @@
 
 namespace cc
 {
-	class CodeCompletionAsync : public CodeCompletionBase
+	class CodeCompletionAsync : public CodeCompletionAsyncBase
 	{
 	public:
 		CodeCompletionAsync();

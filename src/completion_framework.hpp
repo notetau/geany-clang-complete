@@ -31,7 +31,7 @@ namespace cc
 
 	class CppCompletionFramework
 	{
-		CodeCompletionAsync* completion;
+		CodeCompletionAsyncBase* completion;
 		SuggestionWindow* suggestion_window;
 	public:
 		CppCompletionFramework();
