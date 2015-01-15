@@ -45,26 +45,37 @@ void cleanup_ClangCompletePluginPref() {
 }
 
 
-void ClangCompletePluginPref::load_default_preferences() {
-	compiler_options.clear();
-	//secondary_compiler_options.clear();
-	start_completion_with_dot = true;
-	start_completion_with_arrow = true;
-	start_completion_with_scope_res = true;
-	row_text_max = 120;
-	suggestion_window_height_max = 300;
-}
-
 static std::string get_config_file() {
 	std::string config_file = geany_data->app->configdir;
-	config_file += G_DIR_SEPARATOR_S;
-	config_file += "plugins";
-	config_file += G_DIR_SEPARATOR_S;
-	config_file += "clang_complete";
-	config_file += G_DIR_SEPARATOR_S;
-	config_file += "config.conf";
+	config_file += G_DIR_SEPARATOR_S "plugins"
+		G_DIR_SEPARATOR_S "clang_complete" G_DIR_SEPARATOR_S "config.conf";
 	return config_file;
 }
+
+// get/set convert function vector and keyfile string list
+static std::vector<std::string> get_vector_from_keyfile_stringlist(
+	GKeyFile* keyfile, const char* group, const char* key, GError* error)
+{
+	std::vector<std::string> value;
+	gsize option_num = 0;
+	gchar** strs = g_key_file_get_string_list(keyfile, group, key, &option_num, NULL);
+	for(gsize i=0; i<option_num; i++) { value.push_back(strs[i]); }
+	g_strfreev(strs);
+	return value;
+}
+static void set_keyfile_stringlist_by_vector(
+	GKeyFile* keyfile, const char* group, const char* key,
+		std::vector<std::string>& value)
+{
+	int option_num = value.size();
+	gchar** strs = (gchar**)g_malloc0(sizeof(gchar*) * (option_num + 1));
+	for(size_t i=0; i<value.size(); i++) {
+		strs[i] = g_strdup(value[i].c_str());
+	}
+	g_key_file_set_string_list(keyfile, "clangcomplete", "compiler_options", strs, option_num);
+	g_strfreev(strs);
+}
+
 
 void ClangCompletePluginPref::load_preferences() {
 	std::string config_file = get_config_file();
@@ -85,18 +96,18 @@ void ClangCompletePluginPref::load_preferences() {
 			"maximum_char_in_row", NULL);
 		pref->suggestion_window_height_max = g_key_file_get_integer(keyfile, "clangcomplete",
 			"maximum_sug_window_height", NULL);
+		pref->compiler_options =
+			get_vector_from_keyfile_stringlist(keyfile, "clangcomplete", "compiler_options", NULL);
 
-		gsize option_num = 0;
-		gchar** strs = g_key_file_get_string_list(keyfile,
-			"clangcomplete", "compiler_options", &option_num, NULL);
-		pref->compiler_options.clear();
-		for(gsize i=0; i<option_num; i++) {
-			pref->compiler_options.push_back(strs[i]);
-		}
-		g_strfreev(strs);
+		// group, type, key, default-value
 	}
 	else {
-		load_default_preferences();
+		compiler_options.clear();
+		start_completion_with_dot = true;
+		start_completion_with_arrow = true;
+		start_completion_with_scope_res = true;
+		row_text_max = 120;
+		suggestion_window_height_max = 300;
 	}
 	g_key_file_free(keyfile);
 
@@ -137,14 +148,8 @@ static void save_preferences_state()
 		"maximum_char_in_row", pref->row_text_max);
 	g_key_file_set_integer(keyfile, "clangcomplete",
 		"maximum_sug_window_height", pref->suggestion_window_height_max);
-
-	int option_num = pref->compiler_options.size();
-	gchar** strs = (gchar**)g_malloc0(sizeof(gchar*) * (option_num + 1));
-	for(size_t i=0; i<pref->compiler_options.size(); i++) {
-		strs[i] = g_strdup(pref->compiler_options[i].c_str());
-	}
-	g_key_file_set_string_list(keyfile, "clangcomplete", "compiler_options", strs, option_num);
-	g_strfreev(strs);
+	set_keyfile_stringlist_by_vector(keyfile, "clangcomplete",
+		"compiler_options", pref->compiler_options);
 
 	//TODO use smart_ptr if errors occur, happen memory leak
 	gchar *dirname = g_path_get_dirname(config_file.c_str());

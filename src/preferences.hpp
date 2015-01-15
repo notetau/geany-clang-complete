@@ -37,7 +37,6 @@ struct ClangCompletePluginPref {
 	//bool use_async_completion;
 
 	void load_preferences();
-	void load_default_preferences();
 };
 
 
