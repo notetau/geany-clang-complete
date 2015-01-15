@@ -49,7 +49,7 @@ PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
 // global variables ////////////////////////////////////////////////////////////////
 static cc::SuggestionWindow* suggestWindow;
 
-cc::CppCompletionFramework* completion_framework;
+static cc::CppCompletionFramework* completion_framework;
 
 
 static struct {
