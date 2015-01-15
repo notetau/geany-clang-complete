@@ -78,6 +78,7 @@ static void set_keyfile_stringlist_by_vector(
 	g_strfreev(strs);
 }
 
+// config dialog implements
 
 
 #include <geanyplugin.h>
@@ -308,10 +309,8 @@ GtkWidget* cc::CppCompletionFramework::create_config_widget(GtkDialog* dialog)
 	g_signal_connect(pref_widgets.swin_height_max_spinbtn, "value-changed",
 			G_CALLBACK(on_pref_dialog_value_changed), NULL);
 
-	GtkWidget* vbox = GETOBJ("box_prefcpp");
-
 	g_signal_connect(dialog, "response", G_CALLBACK(on_configure_response), NULL);
-
+	GtkWidget* vbox = GETOBJ("box_prefcpp");
 	return vbox;
 }
 
