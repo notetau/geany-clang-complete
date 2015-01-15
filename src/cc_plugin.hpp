@@ -27,5 +27,3 @@ extern "C" {
 	extern GeanyData *geany_data;
 	extern GeanyFunctions *geany_functions;
 }
-
-void update_clang_complete_plugin_state();

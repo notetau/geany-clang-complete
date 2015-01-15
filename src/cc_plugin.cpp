@@ -203,17 +203,6 @@ PluginCallback plugin_callbacks[] = {
 	{NULL,NULL,FALSE,NULL}
 };
 
-void update_clang_complete_plugin_state()
-{
-	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
-	if( completion_framework ) {
-		completion_framework->set_completion_option(pref->compiler_options);
-	}
-	if( suggestWindow ) {
-		suggestWindow->set_max_char_in_row(pref->row_text_max);
-		suggestWindow->set_max_window_height(pref->suggestion_window_height_max);
-	}
-}
 
 static void force_completion(G_GNUC_UNUSED guint key_id)
 {
@@ -255,6 +244,7 @@ extern "C"{
 		completion_framework = new cc::CppCompletionFramework();
 		plugin_timeout_add(geany_plugin, 20, loop_check_ready, NULL);
 		suggestWindow = new cc::SuggestionWindow();
+		completion_framework->set_suggestion_window(suggestWindow);
 		completion_framework->load_preferences();
 
 		init_keybindings();

@@ -342,7 +342,12 @@ void cc::CppCompletionFramework::save_preferences()
 
 void cc::CppCompletionFramework::updated_preferences()
 {
-	update_clang_complete_plugin_state();
+	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
+	this->set_completion_option(pref->compiler_options);
+	if( this->suggestion_window ) {
+		this->suggestion_window->set_max_char_in_row(pref->row_text_max);
+		this->suggestion_window->set_max_window_height(pref->suggestion_window_height_max);
+	}
 }
 
 
