@@ -137,42 +137,6 @@ static bool check_trigger_char(GeanyEditor *editor)
 	} else {
 		return false;
 	}
-	/*
-	int pos = sci_get_current_position(editor->sci);
-	if( pos < 2 ) { return false; }
-
-	char c1 = sci_get_char_at(editor->sci, pos-1);
-	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
-
-	int style_id = sci_get_style_at(editor->sci, pos);
-	switch(style_id){
-		case SCE_C_COMMENTLINE:    case SCE_C_COMMENT:
-		case SCE_C_COMMENTLINEDOC: case SCE_C_COMMENTDOC:
-		case SCE_C_STRINGEOL:
-			return false;
-	}
-
-	if( pref->start_completion_with_scope_res ) {
-		if(c1 == ':') {
-			char c0 = sci_get_char_at(editor->sci, pos-2);
-			if( c0 == ':' ) { return true; }
-		}
-	}
-	if( pref->start_completion_with_arrow ) {
-		if( c1 == '>' ) {
-			char c0 = sci_get_char_at(editor->sci, pos-2);
-			if( c0 == '-' ) { return true; }
-		}
-	}
-	if( pref->start_completion_with_dot ) {
-		 if(c1 == '.') {
-			int c0_style_id = sci_get_style_at(editor->sci, pos-1);
-			if( c0_style_id == SCE_C_NUMBER ) { return false; }
-			// TODO ignore 0 omitted floating number such as ".123"
-			return true;
-		}
-	}
-	return false;*/
 }
 
 static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
