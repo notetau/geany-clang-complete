@@ -20,7 +20,7 @@
  */
 
 #include "completion_async.hpp"
-#include "completion.hpp"
+#include "completion_base.hpp"
 #include <thread>
 #include <mutex>
 #include <list>
