@@ -19,7 +19,6 @@
  * MA 02110-1301, USA.
  */
 
-#include "preferences.hpp"
 
 #include "cc_plugin.hpp"
 
@@ -28,6 +27,8 @@
 #include <sstream>
 
 #include "completion_framework.hpp"
+
+#include "preferences.hpp"
 
 // global preference access interface
 ClangCompletePluginPref* global_ClangCompletePluginPref_instance = NULL;

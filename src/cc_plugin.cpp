@@ -38,13 +38,6 @@ PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
 
 #include <SciLexer.h>
 
-#include "completion.hpp"
-#include "ui.hpp"
-#include "preferences.hpp"
-
-#include "completion_async.hpp"
-#include <thread>
-#include <chrono>
 #include "completion_framework.hpp"
 // global variables ////////////////////////////////////////////////////////////////
 static cc::SuggestionWindow* suggestWindow;
