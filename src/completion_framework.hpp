@@ -4,7 +4,7 @@
 #include "cc_plugin.hpp"
 
 #include "completion_async.hpp"
-#include "ui.hpp"
+#include "suggestion_window.hpp"
 namespace cc
 {
 

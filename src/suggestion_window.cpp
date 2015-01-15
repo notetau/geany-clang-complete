@@ -1,5 +1,5 @@
 /*
- * ui.cpp - a Geany plugin to provide code completion using clang
+ * suggestion_window.cpp - a Geany plugin to provide code completion using clang
  *
  * Copyright (C) 2014 Noto, Yuta <nonotetau(at)gmail(dot)com>
  *
@@ -19,7 +19,7 @@
  * MA 02110-1301, USA.
  */
 
-#include "ui.hpp"
+#include "suggestion_window.hpp"
 
 #include <string.h>
 #include <gdk/gdkkeysyms.h>

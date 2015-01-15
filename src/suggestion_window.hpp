@@ -1,5 +1,5 @@
 /*
- * ui.hpp - a Geany plugin to provide code completion using clang
+ * suggestion_window.hpp - a Geany plugin to provide code completion using clang
  *
  * Copyright (C) 2014 Noto, Yuta <nonotetau(at)gmail(dot)com>
  *
