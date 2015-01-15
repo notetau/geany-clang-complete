@@ -120,35 +120,11 @@ static struct PrefWidget {
 } pref_widgets;
 
 
-
-static void save_preferences_state()
-{
-	std::string config_file = get_config_file();
-	GKeyFile *keyfile = g_key_file_new();
-
-	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
-	g_key_file_set_boolean(keyfile, "clangcomplete",
-		"start_completion_with_dot", pref->start_completion_with_dot);
-	g_key_file_set_boolean(keyfile, "clangcomplete",
-		"start_completion_with_arrow", pref->start_completion_with_arrow);
-	g_key_file_set_boolean(keyfile, "clangcomplete",
-		"start_completion_with_scope_resolution", pref->start_completion_with_scope_res);
-	g_key_file_set_integer(keyfile, "clangcomplete",
-		"maximum_char_in_row", pref->row_text_max);
-	g_key_file_set_integer(keyfile, "clangcomplete",
-		"maximum_sug_window_height", pref->suggestion_window_height_max);
-	set_keyfile_stringlist_by_vector(keyfile, "clangcomplete",
-		"compiler_options", pref->compiler_options);
-
-	save_keyfile(keyfile, config_file.c_str());
-
-	g_key_file_free(keyfile);
-}
-
 static void on_configure_response(GtkDialog *dialog, gint response, gpointer user_data)
 {
 	if (response == GTK_RESPONSE_OK || response == GTK_RESPONSE_APPLY) {
 		g_print("clang complete: modified preferences\n");
+		auto self = (cc::CppCompletionFramework*)user_data;
 
 		ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
 
@@ -181,8 +157,8 @@ static void on_configure_response(GtkDialog *dialog, gint response, gpointer use
 		pref->suggestion_window_height_max = gtk_spin_button_get_value_as_int(
 			GTK_SPIN_BUTTON(pref_widgets.swin_height_max_spinbtn));
 
-		save_preferences_state();
-		update_clang_complete_plugin_state();
+		self->save_preferences();
+		self->updated_preferences();
 	}
 }
 
@@ -295,7 +271,7 @@ GtkWidget* cc::CppCompletionFramework::create_config_widget(GtkDialog* dialog)
 	gtk_spin_button_set_value(
 		GTK_SPIN_BUTTON(pref_widgets.swin_height_max_spinbtn), pref->suggestion_window_height_max);
 
-	g_signal_connect(dialog, "response", G_CALLBACK(on_configure_response), NULL);
+	g_signal_connect(dialog, "response", G_CALLBACK(on_configure_response), this);
 	GtkWidget* vbox = GETOBJ("box_prefcpp");
 	return vbox;
 }
@@ -336,6 +312,31 @@ void cc::CppCompletionFramework::load_preferences()
 	g_key_file_free(keyfile);
 
 	this->updated_preferences();
+}
+
+
+void cc::CppCompletionFramework::save_preferences()
+{
+	std::string config_file = get_config_file();
+	GKeyFile *keyfile = g_key_file_new();
+
+	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
+	g_key_file_set_boolean(keyfile, "clangcomplete",
+		"start_completion_with_dot", pref->start_completion_with_dot);
+	g_key_file_set_boolean(keyfile, "clangcomplete",
+		"start_completion_with_arrow", pref->start_completion_with_arrow);
+	g_key_file_set_boolean(keyfile, "clangcomplete",
+		"start_completion_with_scope_resolution", pref->start_completion_with_scope_res);
+	g_key_file_set_integer(keyfile, "clangcomplete",
+		"maximum_char_in_row", pref->row_text_max);
+	g_key_file_set_integer(keyfile, "clangcomplete",
+		"maximum_sug_window_height", pref->suggestion_window_height_max);
+	set_keyfile_stringlist_by_vector(keyfile, "clangcomplete",
+		"compiler_options", pref->compiler_options);
+
+	save_keyfile(keyfile, config_file.c_str());
+
+	g_key_file_free(keyfile);
 }
 
 
