@@ -30,7 +30,7 @@ namespace cc
 
 CppCompletionFramework::CppCompletionFramework()
 {
-	completion = new CodeCompletionAsync();
+	completion = new CodeCompletionAsyncWrapper(new CodeCompletion());
 	suggestion_window = nullptr;
 }
 CppCompletionFramework::~CppCompletionFramework()

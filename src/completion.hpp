@@ -27,7 +27,7 @@
 
 namespace cc
 {
-	class CodeCompletion
+	class CodeCompletion : public CodeCompletionBase
 	{
 	public:
 		CodeCompletion();

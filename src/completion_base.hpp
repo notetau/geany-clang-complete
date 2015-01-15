@@ -61,6 +61,17 @@ namespace cc
 	typedef std::vector<CompleteResultRow> CodeCompletionResults;
 
 
+	class CodeCompletionBase
+	{
+	public:
+		CodeCompletionBase() {}
+		~CodeCompletionBase() {}
+		virtual void set_option(std::vector<std::string>& options) = 0;
+		virtual void complete(CodeCompletionResults& result,
+			const char* filename, const char* content, int line, int col, int flag=0) = 0;
+	};
+
+
 	class CodeCompletionAsyncBase
 	{
 	public:

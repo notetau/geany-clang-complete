@@ -29,23 +29,29 @@
 #include <future>
 #include <iostream>
 #include <chrono>
+
 namespace cc
 {
-	class CodeCompletionAsync::CodeCompletionAsyncImpl
+	class CodeCompletionAsyncWrapper::CodeCompletionAsyncWrapperImpl
 	{
 	public:
-		CodeCompletionAsyncImpl()
+		CodeCompletionAsyncWrapperImpl(CodeCompletionBase* completion)
 		{
+			this->completion = completion;
 		}
 
-		~CodeCompletionAsyncImpl()
+		~CodeCompletionAsyncWrapperImpl()
 		{
+			if(completion) {
+				delete completion;
+				completion = nullptr;
+			}
 		}
 
 		void set_option(std::vector<std::string>& options)
 		{
 			std::lock_guard<std::mutex> lock(comp_mutex);
-			completion.set_option(options);
+			completion->set_option(options);
 		}
 		void complete_async(
 			const char* filename, const char* content, int line, int col, int flag)
@@ -61,7 +67,7 @@ namespace cc
 					{
 						std::lock_guard<std::mutex> lock(comp_mutex);
 
-						completion.complete(
+						completion->complete(
 							*results,
 							filename_.c_str(), content_.c_str(), line, col, flag);
 						return results;
@@ -98,7 +104,7 @@ namespace cc
 			}
 		}
 	private:
-		CodeCompletion completion;
+		CodeCompletionBase* completion = nullptr;
 
 		std::list< std::future< std::shared_ptr<CodeCompletionResults> > > future_list;
 
@@ -107,22 +113,23 @@ namespace cc
 
 
 
-	CodeCompletionAsync::CodeCompletionAsync() : pimpl(new CodeCompletionAsyncImpl()) {}
+	CodeCompletionAsyncWrapper::CodeCompletionAsyncWrapper(CodeCompletionBase* completion)
+	: pimpl(new CodeCompletionAsyncWrapperImpl(completion)) {}
 
-	CodeCompletionAsync::~CodeCompletionAsync() { delete pimpl; }
+	CodeCompletionAsyncWrapper::~CodeCompletionAsyncWrapper() { delete pimpl; }
 
-	void CodeCompletionAsync::set_option(std::vector<std::string>& options)
+	void CodeCompletionAsyncWrapper::set_option(std::vector<std::string>& options)
 	{
 		pimpl->set_option(options);
 	}
 
-	void CodeCompletionAsync::complete_async(
+	void CodeCompletionAsyncWrapper::complete_async(
 		const char* filename, const char* content, int line, int col, int flag)
 	{
 		pimpl->complete_async(filename, content, line, col, flag);
 	}
 
-	bool CodeCompletionAsync::try_get_results(CodeCompletionResults& results)
+	bool CodeCompletionAsyncWrapper::try_get_results(CodeCompletionResults& results)
 	{
 		return pimpl->try_get_results(results);
 	}
