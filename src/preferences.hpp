@@ -49,8 +49,3 @@ private:
 public:
 	~ClangCompletePluginPref() = default;
 };
-
-
-//ClangCompletePluginPref* get_ClangCompletePluginPref();
-
-//void cleanup_ClangCompletePluginPref();
