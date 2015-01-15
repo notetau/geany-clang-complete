@@ -49,7 +49,7 @@ PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
 // global variables ////////////////////////////////////////////////////////////////
 static cc::SuggestionWindow* suggestWindow;
 
-static cc::CppCompletionFramework* completion_framework;
+cc::CppCompletionFramework* completion_framework;
 
 
 static struct {
@@ -205,12 +205,13 @@ PluginCallback plugin_callbacks[] = {
 
 void update_clang_complete_plugin_state()
 {
+	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
 	if( completion_framework ) {
-		completion_framework->set_completion_option(get_ClangCompletePluginPref()->compiler_options);
+		completion_framework->set_completion_option(pref->compiler_options);
 	}
 	if( suggestWindow ) {
-		suggestWindow->set_max_char_in_row(get_ClangCompletePluginPref()->row_text_max);
-		suggestWindow->set_max_window_height(get_ClangCompletePluginPref()->suggestion_window_height_max);
+		suggestWindow->set_max_char_in_row(pref->row_text_max);
+		suggestWindow->set_max_window_height(pref->suggestion_window_height_max);
 	}
 }
 
@@ -271,7 +272,6 @@ extern "C"{
 			delete suggestWindow;
 			suggestWindow = NULL;
 		}
-		cleanup_ClangCompletePluginPref();
 	}
 
 	GtkWidget* plugin_configure(GtkDialog* dialog)

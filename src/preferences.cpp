@@ -27,6 +27,8 @@
 #include <string>
 #include <sstream>
 
+#include "completion_framework.hpp"
+
 // global preference access interface
 ClangCompletePluginPref* global_ClangCompletePluginPref_instance = NULL;
 
@@ -75,6 +77,8 @@ static void set_keyfile_stringlist_by_vector(
 	g_key_file_set_string_list(keyfile, "clangcomplete", "compiler_options", strs, option_num);
 	g_strfreev(strs);
 }
+
+
 
 #include <geanyplugin.h>
 
@@ -231,7 +235,6 @@ static void on_click_exec_button(GtkButton *button, gpointer user_data)
 	gtk_text_buffer_insert(pref_widgets.options_text_buf, &iter, write_str.c_str(), -1);
 }
 
-#include "completion_framework.hpp"
 
 #define GETOBJ(name) GTK_WIDGET(gtk_builder_get_object(builder, name))
 
@@ -310,6 +313,50 @@ GtkWidget* cc::CppCompletionFramework::create_config_widget(GtkDialog* dialog)
 	g_signal_connect(dialog, "response", G_CALLBACK(on_configure_response), NULL);
 
 	return vbox;
+}
+
+void cc::CppCompletionFramework::load_preferences()
+{
+	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
+
+	std::string config_file = get_config_file();
+
+	/* Initialising options from config file */
+	GKeyFile* keyfile = g_key_file_new();
+	if( g_key_file_load_from_file(keyfile, config_file.c_str(), G_KEY_FILE_NONE, NULL) ) {
+
+		pref->start_completion_with_dot = g_key_file_get_boolean(keyfile, "clangcomplete",
+			"start_completion_with_dot", NULL);
+		pref->start_completion_with_arrow = g_key_file_get_boolean(keyfile, "clangcomplete",
+			"start_completion_with_arrow", NULL);
+		pref->start_completion_with_scope_res = g_key_file_get_boolean(keyfile, "clangcomplete",
+			"start_completion_with_scope_resolution", NULL);
+		pref->row_text_max = g_key_file_get_integer(keyfile, "clangcomplete",
+			"maximum_char_in_row", NULL);
+		pref->suggestion_window_height_max = g_key_file_get_integer(keyfile, "clangcomplete",
+			"maximum_sug_window_height", NULL);
+		pref->compiler_options =
+			get_vector_from_keyfile_stringlist(keyfile, "clangcomplete", "compiler_options", NULL);
+
+		// group, type, key, default-value
+	}
+	else {
+		pref->compiler_options.clear();
+		pref->start_completion_with_dot = true;
+		pref->start_completion_with_arrow = true;
+		pref->start_completion_with_scope_res = true;
+		pref->row_text_max = 120;
+		pref->suggestion_window_height_max = 300;
+	}
+	g_key_file_free(keyfile);
+
+	this->updated_preferences();
+}
+
+
+void cc::CppCompletionFramework::updated_preferences()
+{
+	update_clang_complete_plugin_state();
 }
 
 
