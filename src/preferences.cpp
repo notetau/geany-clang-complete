@@ -78,18 +78,37 @@ static void set_keyfile_stringlist_by_vector(
 	g_strfreev(strs);
 }
 
+static void save_keyfile(GKeyFile* keyfile, const char* path)
+{
+	//TODO use smart_ptr if errors occur, happen memory leak
+	gchar *dirname = g_path_get_dirname(path);
+
+	gsize data_length;
+	gchar* data = g_key_file_to_data(keyfile, &data_length, NULL);
+
+	int err = utils_mkdir(dirname, TRUE);
+	if( err != 0 ) {
+		g_critical(_("Failed to create configuration directory \"%s\": %s"),
+			dirname, g_strerror(err));
+		return;
+	}
+
+	GError *error = NULL;
+	if( !g_file_set_contents (path, data, data_length, &error) ) {
+		g_critical(_("Failed to save configuration file: %s"), error->message);
+		g_error_free(error);
+		return;
+	}
+	g_free(data);
+	g_free(dirname);
+}
+
 // config dialog implements
 
 
 #include <geanyplugin.h>
 
-static bool pref_dialog_changed = false;
-
-static void on_pref_dialog_value_changed(GtkSpinButton *spinbutton, gpointer user_data) {
-	pref_dialog_changed = true;
-}
-
-static struct {
+static struct PrefWidget {
 	GtkWidget* start_with_dot;
 	GtkWidget* start_with_arrow;
 	GtkWidget* start_with_scope_res;
@@ -97,7 +116,10 @@ static struct {
 	GtkWidget* swin_height_max_spinbtn;
 	GtkTextBuffer* options_text_buf;
 	GtkEntryBuffer* command_buffer;
+
 } pref_widgets;
+
+
 
 static void save_preferences_state()
 {
@@ -118,72 +140,49 @@ static void save_preferences_state()
 	set_keyfile_stringlist_by_vector(keyfile, "clangcomplete",
 		"compiler_options", pref->compiler_options);
 
-	//TODO use smart_ptr if errors occur, happen memory leak
-	gchar *dirname = g_path_get_dirname(config_file.c_str());
+	save_keyfile(keyfile, config_file.c_str());
 
-	gsize data_length;
-	gchar* data = g_key_file_to_data(keyfile, &data_length, NULL);
-
-	int err = utils_mkdir(dirname, TRUE);
-	if( err != 0 ) {
-		g_critical(_("Failed to create configuration directory \"%s\": %s"),
-			dirname, g_strerror(err));
-		return;
-	}
-
-	GError *error = NULL;
-	if( !g_file_set_contents (config_file.c_str(), data, data_length, &error) ) {
-		g_critical(_("Failed to save configuration file: %s"), error->message);
-		g_error_free(error);
-		return;
-	}
-	g_free(data);
-	g_free(dirname);
 	g_key_file_free(keyfile);
 }
 
 static void on_configure_response(GtkDialog *dialog, gint response, gpointer user_data)
 {
 	if (response == GTK_RESPONSE_OK || response == GTK_RESPONSE_APPLY) {
-		g_debug("respon ok");
-		if( pref_dialog_changed ) {
-			g_print("clang complete: modified preferences\n");
-			pref_dialog_changed = false;
+		g_print("clang complete: modified preferences\n");
 
-			ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
+		ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
 
-			pref->compiler_options.clear();
-			GtkTextIter start, end;
-			gtk_text_buffer_get_start_iter(pref_widgets.options_text_buf, &start);
-			gtk_text_buffer_get_end_iter(pref_widgets.options_text_buf, &end);
-			gchar* text = gtk_text_buffer_get_text(
-				pref_widgets.options_text_buf, &start, &end, FALSE);
-			std::istringstream iss(text);
-			std::string tmp;
-			while(std::getline(iss, tmp, '\n')) {
-				if(tmp.length() != 0) {
-					if( tmp[tmp.length()-1] == '\r' ) { tmp = tmp.substr(0,tmp.length()-1); }
-					pref->compiler_options.push_back(tmp);
-				}
+		pref->compiler_options.clear();
+		GtkTextIter start, end;
+		gtk_text_buffer_get_start_iter(pref_widgets.options_text_buf, &start);
+		gtk_text_buffer_get_end_iter(pref_widgets.options_text_buf, &end);
+		gchar* text = gtk_text_buffer_get_text(
+			pref_widgets.options_text_buf, &start, &end, FALSE);
+		std::istringstream iss(text);
+		std::string tmp;
+		while(std::getline(iss, tmp, '\n')) {
+			if(tmp.length() != 0) {
+				if( tmp[tmp.length()-1] == '\r' ) { tmp = tmp.substr(0,tmp.length()-1); }
+				pref->compiler_options.push_back(tmp);
 			}
-			g_free(text);
-
-			pref->start_completion_with_dot =
-				gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_dot));
-			pref->start_completion_with_arrow =
-				gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_arrow));
-			pref->start_completion_with_scope_res =
-				gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_scope_res));
-
-			pref->row_text_max = gtk_spin_button_get_value_as_int(
-				GTK_SPIN_BUTTON(pref_widgets.row_text_max_spinbtn));
-
-			pref->suggestion_window_height_max = gtk_spin_button_get_value_as_int(
-				GTK_SPIN_BUTTON(pref_widgets.swin_height_max_spinbtn));
-
-			save_preferences_state();
-			update_clang_complete_plugin_state();
 		}
+		g_free(text);
+
+		pref->start_completion_with_dot =
+			gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_dot));
+		pref->start_completion_with_arrow =
+			gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_arrow));
+		pref->start_completion_with_scope_res =
+			gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_scope_res));
+
+		pref->row_text_max = gtk_spin_button_get_value_as_int(
+			GTK_SPIN_BUTTON(pref_widgets.row_text_max_spinbtn));
+
+		pref->suggestion_window_height_max = gtk_spin_button_get_value_as_int(
+			GTK_SPIN_BUTTON(pref_widgets.swin_height_max_spinbtn));
+
+		save_preferences_state();
+		update_clang_complete_plugin_state();
 	}
 }
 
@@ -242,7 +241,6 @@ static void on_click_exec_button(GtkButton *button, gpointer user_data)
 GtkWidget* cc::CppCompletionFramework::create_config_widget(GtkDialog* dialog)
 {
 	g_debug("code complete: plugin_configure");
-	pref_dialog_changed = false;
 	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
 
 	GError *err = NULL;
@@ -259,20 +257,14 @@ GtkWidget* cc::CppCompletionFramework::create_config_widget(GtkDialog* dialog)
 	pref_widgets.start_with_dot = GETOBJ("cbtn_dot");
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_dot),
 			pref->start_completion_with_dot);
-	g_signal_connect(pref_widgets.start_with_dot, "toggled",
-		G_CALLBACK(on_pref_dialog_value_changed), NULL);
 
 	pref_widgets.start_with_arrow = GETOBJ("cbtn_arrow");
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_arrow),
 			pref->start_completion_with_arrow);
-	g_signal_connect(pref_widgets.start_with_arrow, "toggled",
-		G_CALLBACK(on_pref_dialog_value_changed), NULL);
 
 	pref_widgets.start_with_scope_res = GETOBJ("cbtn_nameres");
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(pref_widgets.start_with_scope_res),
 			pref->start_completion_with_scope_res);
-	g_signal_connect(pref_widgets.start_with_scope_res, "toggled",
-		G_CALLBACK(on_pref_dialog_value_changed), NULL);
 
 	// compiler options
 	GtkWidget* options_text_view = GETOBJ("tv_compileopt");
@@ -285,8 +277,6 @@ GtkWidget* cc::CppCompletionFramework::create_config_widget(GtkDialog* dialog)
 			pref_widgets.options_text_buf, &iter, pref->compiler_options[i].c_str(), -1);
 		gtk_text_buffer_insert(pref_widgets.options_text_buf, &iter, "\n", -1);
 	}
-	g_signal_connect(pref_widgets.options_text_buf, "changed",
-		G_CALLBACK(on_pref_dialog_value_changed), NULL);
 
 	// get option form command
 	GtkWidget* command_entry = GETOBJ("te_comquery");
@@ -300,14 +290,10 @@ GtkWidget* cc::CppCompletionFramework::create_config_widget(GtkDialog* dialog)
 	pref_widgets.row_text_max_spinbtn = GETOBJ("spin_rowtextmax");
 	gtk_spin_button_set_value(
 		GTK_SPIN_BUTTON(pref_widgets.row_text_max_spinbtn), pref->row_text_max);
-	g_signal_connect(pref_widgets.row_text_max_spinbtn, "value-changed",
-			G_CALLBACK(on_pref_dialog_value_changed), NULL);
 
 	pref_widgets.swin_height_max_spinbtn = GETOBJ("spin_sugwinheight");
 	gtk_spin_button_set_value(
 		GTK_SPIN_BUTTON(pref_widgets.swin_height_max_spinbtn), pref->suggestion_window_height_max);
-	g_signal_connect(pref_widgets.swin_height_max_spinbtn, "value-changed",
-			G_CALLBACK(on_pref_dialog_value_changed), NULL);
 
 	g_signal_connect(dialog, "response", G_CALLBACK(on_configure_response), NULL);
 	GtkWidget* vbox = GETOBJ("box_prefcpp");
