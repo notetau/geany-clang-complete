@@ -40,14 +40,7 @@ PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
 // global variables ////////////////////////////////////////////////////////////////
 static cc::SuggestionWindow* suggestWindow;
 
-<<<<<<< HEAD
-///cc::CodeCompletion* codeCompletion;
-//static cc::CodeCompletionAsync* codeCompletion;
-static cc::CodeCompletionBase* codeCompletion;
-=======
 static cc::CppCompletionFramework* completion_framework;
-
->>>>>>> framework-pref
 
 static struct {
 	bool valid;

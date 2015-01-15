@@ -21,22 +21,10 @@
 
 #pragma once
 
-#include "completion.hpp"
+#include "completion_base.hpp"
 
 namespace cc
 {
-
-	class CodeCompletionBase
-	{
-	public:
-		CodeCompletionBase() {}
-		virtual ~CodeCompletionBase() {}
-		virtual void set_option(std::vector<std::string>& options) = 0;
-		virtual void complete_async(
-			const char* filename, const char* content, int line, int col, int flag=0)  = 0;
-		virtual bool try_get_results(CodeCompletionResults& result)  = 0;
-	};
-
 	class CodeCompletionAsync : public CodeCompletionBase
 	{
 	public:
