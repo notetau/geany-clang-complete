@@ -284,7 +284,8 @@ extern "C"{
 		completion_framework = new cc::CppCompletionFramework();
 		plugin_timeout_add(geany_plugin, 20, loop_check_ready, NULL);
 		suggestWindow = new cc::SuggestionWindow();
-		get_ClangCompletePluginPref()->load_preferences();
+		completion_framework->load_preferences();
+		//get_ClangCompletePluginPref()->load_preferences();
 
 		init_keybindings();
 
