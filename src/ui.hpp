@@ -43,6 +43,10 @@ namespace cc
 
 		bool isShowing() const { return showing_flag; }
 		void arrange_window();
+
+		int set_max_char_in_row(int num) { max_char_in_row = num; }
+		int set_max_window_height(int px) { max_window_height = px; }
+
 	private:
 		GtkWidget* window;
 		GtkWidget* tree_view;
@@ -54,6 +58,9 @@ namespace cc
 
 		std::string filtered_str;
 		int pos_start;
+
+		int max_char_in_row = 100;
+		int max_window_height = 300;
 
 		int character_width; // for calc treeview width
 

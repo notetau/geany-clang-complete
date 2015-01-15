@@ -24,7 +24,6 @@
 #include <string.h>
 #include <gdk/gdkkeysyms.h>
 
-#include "preferences.hpp"
 
 namespace cc
 {
@@ -217,13 +216,12 @@ void SuggestionWindow::filter_add(const std::string& str)
 
 void SuggestionWindow::arrange_window()
 {
-	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
 	// gtk2+
 	GtkRequisition sg_win_size;
 	gtk_widget_size_request(tree_view, &sg_win_size);
 	CHECK_ARRANGE("sg_win_size(%d, %d)", sg_win_size.width, sg_win_size.height);
-	if( sg_win_size.height > pref->suggestion_window_height_max ) {
-		sg_win_size.height = pref->suggestion_window_height_max;
+	if( sg_win_size.height > max_window_height ) {
+		sg_win_size.height = max_window_height;
 	}
 	CHECK_ARRANGE("after, sg_win_size(%d, %d)", sg_win_size.width, sg_win_size.height);
 	gtk_widget_set_size_request(window, sg_win_size.width, sg_win_size.height);
@@ -361,8 +359,7 @@ void SuggestionWindow::arrange_window()
 
 void SuggestionWindow::setup_showing(const cc::CodeCompletionResults& results)
 {
-	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
-	CHECK_ARRANGE("start suggest show %d", pref->row_text_max);
+	CHECK_ARRANGE("start suggest show %d", max_char_in_row);
 	int max_signature_length = 0;
 	gtk_tree_view_set_model(GTK_TREE_VIEW(tree_view), NULL);
 	gtk_list_store_clear(model);
@@ -371,8 +368,8 @@ void SuggestionWindow::setup_showing(const cc::CodeCompletionResults& results)
 	for(size_t i = 0; i < results.size(); i++) {
 		const char* typedtext = results[i].typed_text.c_str();
 		std::string labelstdstr = results[i].signature;
-		if( labelstdstr.length() > pref->row_text_max ) {
-			labelstdstr = labelstdstr.substr(0, pref->row_text_max);
+		if( labelstdstr.length() > max_char_in_row ) {
+			labelstdstr = labelstdstr.substr(0, max_char_in_row);
 		}
 		gtk_list_store_append(model, &iter);
 		gtk_list_store_set(model, &iter,

@@ -36,21 +36,18 @@ PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
 #include <vector>
 #include <string.h>
 
-#include <SciLexer.h>
-
-#include "completion.hpp"
-#include "ui.hpp"
-#include "preferences.hpp"
-
-#include "completion_async.hpp"
-#include <thread>
-#include <chrono>
+#include "completion_framework.hpp"
 // global variables ////////////////////////////////////////////////////////////////
 static cc::SuggestionWindow* suggestWindow;
 
+<<<<<<< HEAD
 ///cc::CodeCompletion* codeCompletion;
 //static cc::CodeCompletionAsync* codeCompletion;
 static cc::CodeCompletionBase* codeCompletion;
+=======
+static cc::CppCompletionFramework* completion_framework;
+
+>>>>>>> framework-pref
 
 static struct {
 	bool valid;
@@ -66,10 +63,12 @@ static bool is_completion_file_now()
 	GeanyDocument* doc = document_get_current();
 	if(doc == NULL) { return false; }
 	if( !doc->real_path ) { return false; }
-	GeanyFiletype *ft = doc->file_type;
-	if(ft == NULL) { return false; }
-	if (ft->id != GEANY_FILETYPES_C && ft->id != GEANY_FILETYPES_CPP) { return false; }
-	return true;
+
+	if(completion_framework) {
+		return completion_framework->check_filetype(doc->file_type);
+	} else {
+		return false;
+	}
 }
 
 static int get_completion_position(int* flag=NULL)
@@ -94,7 +93,7 @@ static int get_completion_position(int* flag=NULL)
 
 static void send_complete(GeanyEditor *editor, int flag)
 {
-	if( codeCompletion == NULL ) { return; }
+	if( completion_framework == NULL ) { return; }
 	if( !is_completion_file_now() ) { return; }
 	int pos = get_completion_position();
 	if( pos == 0 ) { return; } //nothing to complete
@@ -111,7 +110,7 @@ static void send_complete(GeanyEditor *editor, int flag)
 	cc::CodeCompletionResults results;
 
 	//TODO clang's col is byte? character?
-	codeCompletion->complete_async(editor->document->file_name, content, line+1, byte_line_len+1);
+	completion_framework->complete_async(editor->document->file_name, content, line+1, byte_line_len+1);
 
 	edit_tracker.valid = true;
 	edit_tracker.start_pos = pos;
@@ -121,7 +120,6 @@ static void send_complete(GeanyEditor *editor, int flag)
 		int len = sci_get_current_position(editor->sci) - pos;
 		edit_tracker.text.append(content + pos, len);
 	}
-	//suggestWindow->show(results, edit_tracker.text.c_str());
 
 	g_free(content);
 }
@@ -131,41 +129,11 @@ static void send_complete(GeanyEditor *editor, int flag)
  */
 static bool check_trigger_char(GeanyEditor *editor)
 {
-	int pos = sci_get_current_position(editor->sci);
-	if( pos < 2 ) { return false; }
-
-	char c1 = sci_get_char_at(editor->sci, pos-1);
-	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
-
-	int style_id = sci_get_style_at(editor->sci, pos);
-	switch(style_id){
-		case SCE_C_COMMENTLINE:    case SCE_C_COMMENT:
-		case SCE_C_COMMENTLINEDOC: case SCE_C_COMMENTDOC:
-		case SCE_C_STRINGEOL:
-			return false;
+	if(completion_framework) {
+		return completion_framework->check_trigger_char(editor);
+	} else {
+		return false;
 	}
-
-	if( pref->start_completion_with_scope_res ) {
-		if(c1 == ':') {
-			char c0 = sci_get_char_at(editor->sci, pos-2);
-			if( c0 == ':' ) { return true; }
-		}
-	}
-	if( pref->start_completion_with_arrow ) {
-		if( c1 == '>' ) {
-			char c0 = sci_get_char_at(editor->sci, pos-2);
-			if( c0 == '-' ) { return true; }
-		}
-	}
-	if( pref->start_completion_with_dot ) {
-		 if(c1 == '.') {
-			int c0_style_id = sci_get_style_at(editor->sci, pos-1);
-			if( c0_style_id == SCE_C_NUMBER ) { return false; }
-			/* TODO ignore 0 omitted floating number such as ".123" */
-			return true;
-		}
-	}
-	return false;
 }
 
 static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
@@ -232,16 +200,10 @@ PluginCallback plugin_callbacks[] = {
 	{NULL,NULL,FALSE,NULL}
 };
 
-void update_clang_complete_plugin_state()
-{
-	if( codeCompletion ) {
-		codeCompletion->set_option( get_ClangCompletePluginPref()->compiler_options );
-	}
-}
 
 static void force_completion(G_GNUC_UNUSED guint key_id)
 {
-	if( codeCompletion ) {
+	if( completion_framework ) {
 		GeanyDocument* doc = document_get_current();
 		if(doc != NULL) {
 			send_complete(doc->editor, 0);
@@ -252,9 +214,9 @@ static void force_completion(G_GNUC_UNUSED guint key_id)
 static gboolean loop_check_ready(gpointer user_data)
 {
 	if( !is_completion_file_now() ) { return TRUE; }
-	if( codeCompletion ) {
+	if( completion_framework ) {
 		cc::CodeCompletionResults results; // allocate at heap, when init?
-		if( codeCompletion->try_get_results(results) ) {
+		if( completion_framework->try_get_completion_results(results) ) {
 			if( edit_tracker.valid ) {
 				suggestWindow->show(results, edit_tracker.text.c_str());
 			}
@@ -276,10 +238,12 @@ static void init_keybindings()
 extern "C"{
 	void plugin_init(GeanyData *data)
 	{
-		codeCompletion = new cc::CodeCompletionAsync();
+		completion_framework = new cc::CppCompletionFramework();
+
 		plugin_timeout_add(geany_plugin, 20, loop_check_ready, NULL);
 		suggestWindow = new cc::SuggestionWindow();
-		get_ClangCompletePluginPref()->load_preferences();
+		completion_framework->set_suggestion_window(suggestWindow);
+		completion_framework->load_preferences();
 
 		init_keybindings();
 
@@ -288,14 +252,18 @@ extern "C"{
 
 	void plugin_cleanup(void)
 	{
-		if( codeCompletion ) {
-			delete codeCompletion;
-			codeCompletion = NULL;
+		if( completion_framework ) {
+			delete completion_framework;
+			completion_framework = NULL;
 		}
 		if( suggestWindow ) {
 			delete suggestWindow;
 			suggestWindow = NULL;
 		}
-		cleanup_ClangCompletePluginPref();
+	}
+
+	GtkWidget* plugin_configure(GtkDialog* dialog)
+	{
+		return completion_framework->create_config_widget(dialog);
 	}
 }
