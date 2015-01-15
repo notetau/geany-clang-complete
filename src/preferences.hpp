@@ -34,9 +34,23 @@ struct ClangCompletePluginPref {
 	int suggestion_window_height_max;
 	//bool hide_filtered_row;
 	//bool replace_well_known_template_typedef;
+
+	static ClangCompletePluginPref* instance()
+	{
+		static ClangCompletePluginPref instance_;
+		return &instance_;
+	}
+private:
+	ClangCompletePluginPref() = default;
+	explicit ClangCompletePluginPref(ClangCompletePluginPref const&) = delete;
+	ClangCompletePluginPref& operator =(ClangCompletePluginPref const&) = delete;
+	explicit ClangCompletePluginPref(ClangCompletePluginPref &&) = delete;
+	ClangCompletePluginPref& operator =(ClangCompletePluginPref &&) = delete;
+public:
+	~ClangCompletePluginPref() = default;
 };
 
 
-ClangCompletePluginPref* get_ClangCompletePluginPref();
+//ClangCompletePluginPref* get_ClangCompletePluginPref();
 
-void cleanup_ClangCompletePluginPref();
+//void cleanup_ClangCompletePluginPref();

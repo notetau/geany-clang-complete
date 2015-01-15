@@ -30,24 +30,6 @@
 
 #include "preferences.hpp"
 
-// global preference access interface
-ClangCompletePluginPref* global_ClangCompletePluginPref_instance = NULL;
-
-ClangCompletePluginPref* get_ClangCompletePluginPref() {
-	if( global_ClangCompletePluginPref_instance == NULL ) {
-		global_ClangCompletePluginPref_instance  = new ClangCompletePluginPref();
-	}
-	return global_ClangCompletePluginPref_instance;
-}
-
-void cleanup_ClangCompletePluginPref() {
-	if( global_ClangCompletePluginPref_instance ) {
-		delete global_ClangCompletePluginPref_instance;
-		global_ClangCompletePluginPref_instance = NULL;
-	}
-}
-
-
 static std::string get_config_file() {
 	std::string config_file = geany_data->app->configdir;
 	config_file += G_DIR_SEPARATOR_S "plugins"
@@ -127,7 +109,7 @@ static void on_configure_response(GtkDialog *dialog, gint response, gpointer use
 		g_print("clang complete: modified preferences\n");
 		auto self = (cc::CppCompletionFramework*)user_data;
 
-		ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
+		ClangCompletePluginPref* pref = ClangCompletePluginPref::instance();
 
 		pref->compiler_options.clear();
 		GtkTextIter start, end;
@@ -218,7 +200,7 @@ static void on_click_exec_button(GtkButton *button, gpointer user_data)
 GtkWidget* cc::CppCompletionFramework::create_config_widget(GtkDialog* dialog)
 {
 	g_debug("code complete: plugin_configure");
-	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
+	ClangCompletePluginPref* pref = ClangCompletePluginPref::instance();
 
 	GError *err = NULL;
 	GtkBuilder* builder = gtk_builder_new();
@@ -279,7 +261,7 @@ GtkWidget* cc::CppCompletionFramework::create_config_widget(GtkDialog* dialog)
 
 void cc::CppCompletionFramework::load_preferences()
 {
-	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
+	ClangCompletePluginPref* pref = ClangCompletePluginPref::instance();
 
 	std::string config_file = get_config_file();
 
@@ -321,7 +303,7 @@ void cc::CppCompletionFramework::save_preferences()
 	std::string config_file = get_config_file();
 	GKeyFile *keyfile = g_key_file_new();
 
-	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
+	ClangCompletePluginPref* pref = ClangCompletePluginPref::instance();
 	g_key_file_set_boolean(keyfile, "clangcomplete",
 		"start_completion_with_dot", pref->start_completion_with_dot);
 	g_key_file_set_boolean(keyfile, "clangcomplete",
@@ -343,7 +325,7 @@ void cc::CppCompletionFramework::save_preferences()
 
 void cc::CppCompletionFramework::updated_preferences()
 {
-	ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
+	ClangCompletePluginPref* pref = ClangCompletePluginPref::instance();
 	this->set_completion_option(pref->compiler_options);
 	if( this->suggestion_window ) {
 		this->suggestion_window->set_max_char_in_row(pref->row_text_max);
