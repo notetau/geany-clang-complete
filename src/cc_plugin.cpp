@@ -132,6 +132,12 @@ static void send_complete(GeanyEditor *editor, int flag)
  */
 static bool check_trigger_char(GeanyEditor *editor)
 {
+	if(completion_framework) {
+		return completion_framework->check_trigger_char(editor);
+	} else {
+		return false;
+	}
+	/*
 	int pos = sci_get_current_position(editor->sci);
 	if( pos < 2 ) { return false; }
 
@@ -162,11 +168,11 @@ static bool check_trigger_char(GeanyEditor *editor)
 		 if(c1 == '.') {
 			int c0_style_id = sci_get_style_at(editor->sci, pos-1);
 			if( c0_style_id == SCE_C_NUMBER ) { return false; }
-			/* TODO ignore 0 omitted floating number such as ".123" */
+			// TODO ignore 0 omitted floating number such as ".123"
 			return true;
 		}
 	}
-	return false;
+	return false;*/
 }
 
 static gboolean on_editor_notify(GObject *obj, GeanyEditor *editor,
@@ -285,7 +291,6 @@ extern "C"{
 		plugin_timeout_add(geany_plugin, 20, loop_check_ready, NULL);
 		suggestWindow = new cc::SuggestionWindow();
 		completion_framework->load_preferences();
-		//get_ClangCompletePluginPref()->load_preferences();
 
 		init_keybindings();
 

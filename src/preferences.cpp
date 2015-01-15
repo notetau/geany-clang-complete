@@ -76,44 +76,6 @@ static void set_keyfile_stringlist_by_vector(
 	g_strfreev(strs);
 }
 
-
-void ClangCompletePluginPref::load_preferences() {
-	std::string config_file = get_config_file();
-
-	/* Initialising options from config file */
-	GKeyFile* keyfile = g_key_file_new();
-	if( g_key_file_load_from_file(keyfile, config_file.c_str(), G_KEY_FILE_NONE, NULL) ) {
-
-		ClangCompletePluginPref* pref = get_ClangCompletePluginPref();
-
-		pref->start_completion_with_dot = g_key_file_get_boolean(keyfile, "clangcomplete",
-			"start_completion_with_dot", NULL);
-		pref->start_completion_with_arrow = g_key_file_get_boolean(keyfile, "clangcomplete",
-			"start_completion_with_arrow", NULL);
-		pref->start_completion_with_scope_res = g_key_file_get_boolean(keyfile, "clangcomplete",
-			"start_completion_with_scope_resolution", NULL);
-		pref->row_text_max = g_key_file_get_integer(keyfile, "clangcomplete",
-			"maximum_char_in_row", NULL);
-		pref->suggestion_window_height_max = g_key_file_get_integer(keyfile, "clangcomplete",
-			"maximum_sug_window_height", NULL);
-		pref->compiler_options =
-			get_vector_from_keyfile_stringlist(keyfile, "clangcomplete", "compiler_options", NULL);
-
-		// group, type, key, default-value
-	}
-	else {
-		compiler_options.clear();
-		start_completion_with_dot = true;
-		start_completion_with_arrow = true;
-		start_completion_with_scope_res = true;
-		row_text_max = 120;
-		suggestion_window_height_max = 300;
-	}
-	g_key_file_free(keyfile);
-
-	update_clang_complete_plugin_state();
-}
-
 #include <geanyplugin.h>
 
 static bool pref_dialog_changed = false;

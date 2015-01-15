@@ -34,9 +34,6 @@ struct ClangCompletePluginPref {
 	int suggestion_window_height_max;
 	//bool hide_filtered_row;
 	//bool replace_well_known_template_typedef;
-	//bool use_async_completion;
-
-	void load_preferences();
 };
 
 
