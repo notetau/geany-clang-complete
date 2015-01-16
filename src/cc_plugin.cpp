@@ -21,16 +21,6 @@
 
 #include "cc_plugin.hpp"
 
-extern "C" {
-	GeanyPlugin *geany_plugin;
-	GeanyData *geany_data;
-	GeanyFunctions *geany_functions;
-}
-
-PLUGIN_VERSION_CHECK(211)
-
-PLUGIN_SET_INFO(_("clang-complete"), _("code completion by clang"),
-	_("0.02"), _("Noto, Yuta <nonotetau@gmail.com>"));
 
 #include <string>
 #include <vector>
@@ -259,4 +249,13 @@ extern "C"{
 	{
 		return completion_framework->create_config_widget(dialog);
 	}
+
+	GeanyPlugin *geany_plugin;
+	GeanyData *geany_data;
+	GeanyFunctions *geany_functions;
+
+	PLUGIN_VERSION_CHECK(211)
+
+	PLUGIN_SET_INFO(_("clang-complete"), _("c/c++ code completion by clang"),
+		_("0.03"), _("Noto, Yuta <nonotetau@gmail.com>"));
 }

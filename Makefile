@@ -22,6 +22,7 @@ lib/$(LIBNAME): $(OBJS)
 	$(CXX) $(OBJS) $(LDFLAGS) -o $@
 
 lib/%.o: src/%.cpp
+	mkdir -p $(dir $@)
 	$(CXX) -c $< $(CXXFLAGS) -o $@
 
 
