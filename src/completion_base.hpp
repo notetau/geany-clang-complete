@@ -25,49 +25,46 @@
 
 namespace cc
 {
-	enum CompleteResultType
-	{
-		COMPLETE_RESULT_VAR,
-		COMPLETE_RESULT_FUNCTION,
-		COMPLETE_RESULT_CLASS,
-		COMPLETE_RESULT_METHOD,
-		COMPLETE_RESULT_MEMBER,
-		COMPLETE_RESULT_STRUCT,
-		COMPLETE_RESULT_NAMESPACE,
-		COMPLETE_RESULT_MACRO,
-		COMPLETE_RESULT_OTHER,
-		COMPLETE_RESULT_NONE,
-	};
+enum CompleteResultType {
+	COMPLETE_RESULT_VAR,
+	COMPLETE_RESULT_FUNCTION,
+	COMPLETE_RESULT_CLASS,
+	COMPLETE_RESULT_METHOD,
+	COMPLETE_RESULT_MEMBER,
+	COMPLETE_RESULT_STRUCT,
+	COMPLETE_RESULT_NAMESPACE,
+	COMPLETE_RESULT_MACRO,
+	COMPLETE_RESULT_OTHER,
+	COMPLETE_RESULT_NONE,
+};
 
-	enum CompleteResultAvailability
-	{
-		COMPLETE_RESULT_AVAIL_AVAIL,
-		COMPLETE_RESULT_AVAIL_DEPRECATED,
-		COMPLETE_RESULT_AVAIL_NOTAVAIL,
-		COMPLETE_RESULT_AVAIL_NOTACCESS
-	};
+enum CompleteResultAvailability {
+	COMPLETE_RESULT_AVAIL_AVAIL,
+	COMPLETE_RESULT_AVAIL_DEPRECATED,
+	COMPLETE_RESULT_AVAIL_NOTAVAIL,
+	COMPLETE_RESULT_AVAIL_NOTACCESS
+};
 
-	struct CompleteResultRow
-	{
-		CompleteResultType type;
-		CompleteResultAvailability availability;
-		std::string typed_text;
-		std::string return_type;
-		std::string arguments;
-		std::string signature;
-		CompleteResultRow();
-	};
+struct CompleteResultRow
+{
+	CompleteResultType type;
+	CompleteResultAvailability availability;
+	std::string typed_text;
+	std::string return_type;
+	std::string arguments;
+	std::string signature;
+	CompleteResultRow();
+};
 
-	typedef std::vector<CompleteResultRow> CodeCompletionResults;
+typedef std::vector<CompleteResultRow> CodeCompletionResults;
 
-
-	class CodeCompletionBase
-	{
-	public:
-		CodeCompletionBase() {}
-		~CodeCompletionBase() {}
-		virtual void set_option(std::vector<std::string>& options) = 0;
-		virtual void complete(CodeCompletionResults& result,
-			const char* filename, const char* content, int line, int col, int flag=0) = 0;
-	};
+class CodeCompletionBase
+{
+   public:
+	CodeCompletionBase() {}
+	~CodeCompletionBase() {}
+	virtual void set_option(std::vector<std::string>& options) = 0;
+	virtual void complete(CodeCompletionResults& result, const char* filename, const char* content,
+	                      int line, int col, int flag = 0) = 0;
+};
 }

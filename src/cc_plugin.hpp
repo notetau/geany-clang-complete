@@ -23,7 +23,7 @@
 #include <geanyplugin.h>
 
 extern "C" {
-	extern GeanyPlugin *geany_plugin;
-	extern GeanyData *geany_data;
-	extern GeanyFunctions *geany_functions;
+extern GeanyPlugin *geany_plugin;
+extern GeanyData *geany_data;
+extern GeanyFunctions *geany_functions;
 }

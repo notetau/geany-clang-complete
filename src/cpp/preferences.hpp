@@ -24,28 +24,31 @@
 #include <vector>
 #include <string>
 
-struct ClangCompletePluginPref {
+struct ClangCompletePluginPref
+{
 	std::vector<std::string> compiler_options;
-	//std::vector<std::string> secondary_compiler_options;
+	// std::vector<std::string> secondary_compiler_options;
 	bool start_completion_with_dot;
 	bool start_completion_with_arrow;
 	bool start_completion_with_scope_res;
 	int row_text_max;
 	int suggestion_window_height_max;
-	//bool hide_filtered_row;
-	//bool replace_well_known_template_typedef;
+	// bool hide_filtered_row;
+	// bool replace_well_known_template_typedef;
 
 	static ClangCompletePluginPref* instance()
 	{
 		static ClangCompletePluginPref instance_;
 		return &instance_;
 	}
-private:
+
+   private:
 	ClangCompletePluginPref() = default;
 	explicit ClangCompletePluginPref(ClangCompletePluginPref const&) = delete;
-	ClangCompletePluginPref& operator =(ClangCompletePluginPref const&) = delete;
-	explicit ClangCompletePluginPref(ClangCompletePluginPref &&) = delete;
-	ClangCompletePluginPref& operator =(ClangCompletePluginPref &&) = delete;
-public:
+	ClangCompletePluginPref& operator=(ClangCompletePluginPref const&) = delete;
+	explicit ClangCompletePluginPref(ClangCompletePluginPref&&) = delete;
+	ClangCompletePluginPref& operator=(ClangCompletePluginPref&&) = delete;
+
+   public:
 	~ClangCompletePluginPref() = default;
 };

@@ -22,61 +22,59 @@
 #pragma once
 
 #include "cc_plugin.hpp"
-//for CodeCompletionResults
+// for CodeCompletionResults
 #include "completion_base.hpp"
 
 namespace cc
 {
-	class SuggestionWindow
-	{
-	public:
-		SuggestionWindow();
-		~SuggestionWindow();
+class SuggestionWindow
+{
+   public:
+	SuggestionWindow();
+	~SuggestionWindow();
 
-		void filter_add(int ch);
-		void filter_add(const std::string& str);
-		void filter_backspace();
+	void filter_add(int ch);
+	void filter_add(const std::string& str);
+	void filter_backspace();
 
-		void show(const cc::CodeCompletionResults& results, const char* initial_filter = NULL);
-		//void show_with_filter(const cc::CodeCompletionResults& results, const std::string& filter);
-		void close();
+	void show(const cc::CodeCompletionResults& results, const char* initial_filter = NULL);
+	// void show_with_filter(const cc::CodeCompletionResults& results, const std::string& filter);
+	void close();
 
-		bool isShowing() const { return showing_flag; }
-		void arrange_window();
+	bool isShowing() const { return showing_flag; }
+	void arrange_window();
 
-		int set_max_char_in_row(int num) { max_char_in_row = num; }
-		int set_max_window_height(int px) { max_window_height = px; }
+	int set_max_char_in_row(int num) { max_char_in_row = num; }
+	int set_max_window_height(int px) { max_window_height = px; }
 
-	private:
-		GtkWidget* window;
-		GtkWidget* tree_view;
-		GtkListStore* model;
+   private:
+	GtkWidget* window;
+	GtkWidget* tree_view;
+	GtkListStore* model;
 
-		std::vector<GdkPixbuf*> icon_pixbufs;
+	std::vector<GdkPixbuf*> icon_pixbufs;
 
-		bool showing_flag;
+	bool showing_flag;
 
-		std::string filtered_str;
-		int pos_start;
+	std::string filtered_str;
+	int pos_start;
 
-		int max_char_in_row = 100;
-		int max_window_height = 300;
+	int max_char_in_row = 100;
+	int max_window_height = 300;
 
-		int character_width; // for calc treeview width
+	int character_width;  // for calc treeview width
 
-		int sig_handler_id[2]; // for need disconnect event
+	int sig_handler_id[2];  // for need disconnect event
 
-		static gboolean signal_key_press_and_release(
-			GtkWidget *widget, GdkEventKey *event, SuggestionWindow* self);
-		static void signal_tree_selection(
-			GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColumn *column,
-			SuggestionWindow* self);
+	static gboolean signal_key_press_and_release(GtkWidget* widget, GdkEventKey* event,
+	                                             SuggestionWindow* self);
+	static void signal_tree_selection(GtkTreeView* tree_view, GtkTreePath* path,
+	                                  GtkTreeViewColumn* column, SuggestionWindow* self);
 
-		void move_cursor(bool down);
-		void select_suggestion();
-		void do_filtering();
+	void move_cursor(bool down);
+	void select_suggestion();
+	void do_filtering();
 
-		void setup_showing(const cc::CodeCompletionResults& results);
-	};
-
+	void setup_showing(const cc::CodeCompletionResults& results);
+};
 }

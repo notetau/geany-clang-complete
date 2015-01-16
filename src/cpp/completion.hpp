@@ -27,20 +27,20 @@
 
 namespace cc
 {
-	class CodeCompletion : public CodeCompletionBase
-	{
-	public:
-		CodeCompletion();
-		~CodeCompletion();
-		void set_option(std::vector<std::string>& options);
-		void complete(CodeCompletionResults& result,
-			const char* filename, const char* content, int line, int col, int flag=0);
+class CodeCompletion : public CodeCompletionBase
+{
+   public:
+	CodeCompletion();
+	~CodeCompletion();
+	void set_option(std::vector<std::string>& options);
+	void complete(CodeCompletionResults& result, const char* filename, const char* content,
+	              int line, int col, int flag = 0);
 
-	private:
-		CodeCompletion(const CodeCompletion&);
-		void operator=(const CodeCompletion&);
+   private:
+	CodeCompletion(const CodeCompletion&);
+	void operator=(const CodeCompletion&);
 
-		class CodeCompletionImpl;
-		CodeCompletionImpl* pimpl;
-	};
+	class CodeCompletionImpl;
+	CodeCompletionImpl* pimpl;
+};
 }

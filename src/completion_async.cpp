@@ -32,105 +32,99 @@
 
 namespace cc
 {
-	class CodeCompletionAsyncWrapper::CodeCompletionAsyncWrapperImpl
+class CodeCompletionAsyncWrapper::CodeCompletionAsyncWrapperImpl
+{
+   public:
+	CodeCompletionAsyncWrapperImpl(CodeCompletionBase* completion)
 	{
-	public:
-		CodeCompletionAsyncWrapperImpl(CodeCompletionBase* completion)
-		{
-			this->completion = completion;
-		}
-
-		~CodeCompletionAsyncWrapperImpl()
-		{
-			if(completion) {
-				delete completion;
-				completion = nullptr;
-			}
-		}
-
-		void set_option(std::vector<std::string>& options)
-		{
-			std::lock_guard<std::mutex> lock(comp_mutex);
-			completion->set_option(options);
-		}
-		void complete_async(
-			const char* filename, const char* content, int line, int col, int flag)
-		{
-			std::string filename_(filename);
-			std::string content_(content);
-
-			std::shared_ptr<CodeCompletionResults> p(new CodeCompletionResults());
-
-			std::future< std::shared_ptr<CodeCompletionResults> > f =
-				std::async( std::launch::async,
-				[=](std::shared_ptr<CodeCompletionResults> results)
-					{
-						std::lock_guard<std::mutex> lock(comp_mutex);
-
-						completion->complete(
-							*results,
-							filename_.c_str(), content_.c_str(), line, col, flag);
-						return results;
-					}, p);
-
-			//push front (stack)
-			future_list.push_front(std::move(f));
-		}
-
-		bool try_get_results(CodeCompletionResults& results)
-		{
-			if( future_list.empty() ) {
-				return false;
-			}
-			else {
-				bool ret = 0;
-				auto iter = future_list.begin();
-
-				if( iter->wait_for(std::chrono::seconds(0)) == std::future_status::ready ) {
-					results = *(iter->get()); //copy
-					ret = true;
-					future_list.erase(iter);
-
-					future_list.remove_if(
-					[](std::future< std::shared_ptr<CodeCompletionResults> >& f)
-					{
-						return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
-					});
-				}
-				else {
-					ret = false;
-				}
-				return ret;
-			}
-		}
-	private:
-		CodeCompletionBase* completion = nullptr;
-
-		std::list< std::future< std::shared_ptr<CodeCompletionResults> > > future_list;
-
-		std::mutex comp_mutex;
-	};
-
-
-
-	CodeCompletionAsyncWrapper::CodeCompletionAsyncWrapper(CodeCompletionBase* completion)
-	: pimpl(new CodeCompletionAsyncWrapperImpl(completion)) {}
-
-	CodeCompletionAsyncWrapper::~CodeCompletionAsyncWrapper() { delete pimpl; }
-
-	void CodeCompletionAsyncWrapper::set_option(std::vector<std::string>& options)
-	{
-		pimpl->set_option(options);
+		this->completion = completion;
 	}
 
-	void CodeCompletionAsyncWrapper::complete_async(
-		const char* filename, const char* content, int line, int col, int flag)
+	~CodeCompletionAsyncWrapperImpl()
 	{
-		pimpl->complete_async(filename, content, line, col, flag);
+		if (completion) {
+			delete completion;
+			completion = nullptr;
+		}
 	}
 
-	bool CodeCompletionAsyncWrapper::try_get_results(CodeCompletionResults& results)
+	void set_option(std::vector<std::string>& options)
 	{
-		return pimpl->try_get_results(results);
+		std::lock_guard<std::mutex> lock(comp_mutex);
+		completion->set_option(options);
 	}
+	void complete_async(const char* filename, const char* content, int line, int col, int flag)
+	{
+		std::string filename_(filename);
+		std::string content_(content);
+
+		std::shared_ptr<CodeCompletionResults> p(new CodeCompletionResults());
+
+		std::future<std::shared_ptr<CodeCompletionResults> > f = std::async(
+		    std::launch::async, [=](std::shared_ptr<CodeCompletionResults> results) {
+			                        std::lock_guard<std::mutex> lock(comp_mutex);
+
+			                        completion->complete(*results, filename_.c_str(),
+			                                             content_.c_str(), line, col, flag);
+			                        return results;
+			                    },
+		    p);
+
+		// push front (stack)
+		future_list.push_front(std::move(f));
+	}
+
+	bool try_get_results(CodeCompletionResults& results)
+	{
+		if (future_list.empty()) {
+			return false;
+		} else {
+			bool ret = 0;
+			auto iter = future_list.begin();
+
+			if (iter->wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+				results = *(iter->get());  // copy
+				ret = true;
+				future_list.erase(iter);
+
+				future_list.remove_if([](std::future<std::shared_ptr<CodeCompletionResults> >& f) {
+					return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+				});
+			} else {
+				ret = false;
+			}
+			return ret;
+		}
+	}
+
+   private:
+	CodeCompletionBase* completion = nullptr;
+
+	std::list<std::future<std::shared_ptr<CodeCompletionResults> > > future_list;
+
+	std::mutex comp_mutex;
+};
+
+CodeCompletionAsyncWrapper::CodeCompletionAsyncWrapper(CodeCompletionBase* completion)
+    : pimpl(new CodeCompletionAsyncWrapperImpl(completion))
+{
+}
+
+CodeCompletionAsyncWrapper::~CodeCompletionAsyncWrapper() { delete pimpl; }
+
+void CodeCompletionAsyncWrapper::set_option(std::vector<std::string>& options)
+{
+	pimpl->set_option(options);
+}
+
+void CodeCompletionAsyncWrapper::complete_async(const char* filename, const char* content, int line,
+                                                int col, int flag)
+{
+	pimpl->complete_async(filename, content, line, col, flag);
+}
+
+bool CodeCompletionAsyncWrapper::try_get_results(CodeCompletionResults& results)
+{
+	return pimpl->try_get_results(results);
+}
 }
