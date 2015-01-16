@@ -70,16 +70,4 @@ namespace cc
 		virtual void complete(CodeCompletionResults& result,
 			const char* filename, const char* content, int line, int col, int flag=0) = 0;
 	};
-
-
-	class CodeCompletionAsyncBase
-	{
-	public:
-		CodeCompletionAsyncBase() {}
-		virtual ~CodeCompletionAsyncBase() {}
-		virtual void set_option(std::vector<std::string>& options) = 0;
-		virtual void complete_async(
-			const char* filename, const char* content, int line, int col, int flag=0)  = 0;
-		virtual bool try_get_results(CodeCompletionResults& result)  = 0;
-	};
 }

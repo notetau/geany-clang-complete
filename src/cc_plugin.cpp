@@ -21,7 +21,6 @@
 
 #include "cc_plugin.hpp"
 
-
 #include <string>
 #include <vector>
 #include <string.h>
@@ -176,13 +175,6 @@ static void on_document_activate(GObject *obj, GeanyDocument *doc, gpointer user
 	if( suggestWindow ) { suggestWindow->close(); }
 }
 
-PluginCallback plugin_callbacks[] = {
-	{"editor_notify", (GCallback)&on_editor_notify, FALSE, NULL},
-	{"document_activate", (GCallback)&on_document_activate, FALSE, NULL},
-	//{"document_open", (GCallback)&on_document_open, FALSE, NULL},
-	{NULL,NULL,FALSE,NULL}
-};
-
 
 static void force_completion(G_GNUC_UNUSED guint key_id)
 {
@@ -207,7 +199,6 @@ static gboolean loop_check_ready(gpointer user_data)
 	}
 	return TRUE;
 }
-
 
 static void init_keybindings()
 {
@@ -254,8 +245,17 @@ extern "C"{
 	GeanyData *geany_data;
 	GeanyFunctions *geany_functions;
 
+	PluginCallback plugin_callbacks[] = {
+		{"editor_notify", (GCallback)&on_editor_notify, FALSE, NULL},
+		{"document_activate", (GCallback)&on_document_activate, FALSE, NULL},
+		//{"document_open", (GCallback)&on_document_open, FALSE, NULL},
+		{NULL,NULL,FALSE,NULL}
+	};
+
+
 	PLUGIN_VERSION_CHECK(211)
 
 	PLUGIN_SET_INFO(_("clang-complete"), _("c/c++ code completion by clang"),
 		_("0.03"), _("Noto, Yuta <nonotetau@gmail.com>"));
+
 }
