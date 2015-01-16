@@ -19,7 +19,7 @@ LDFLAGS  += -shared `pkg-config --libs geany` -lclang
 all: lib/$(LIBNAME)
 
 lib/$(LIBNAME): $(OBJS)
-	$(CXX) $(notdir $(OBJS)) $(LDFLAGS) -o $@
+	$(CXX) $(OBJS) $(LDFLAGS) -o $@
 
 lib/%.o: src/%.cpp
 	mkdir -p $(dir $@)
