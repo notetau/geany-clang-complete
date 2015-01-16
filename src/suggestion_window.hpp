@@ -23,7 +23,7 @@
 
 #include "cc_plugin.hpp"
 //for CodeCompletionResults
-#include "completion.hpp"
+#include "completion_base.hpp"
 
 namespace cc
 {

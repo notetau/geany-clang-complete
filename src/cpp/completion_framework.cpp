@@ -22,6 +22,7 @@
 #include "completion_framework.hpp"
 
 #include "preferences.hpp"
+#include "completion.hpp"
 
 #include <SciLexer.h>
 

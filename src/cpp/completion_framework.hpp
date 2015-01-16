@@ -22,10 +22,10 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "cc_plugin.hpp"
+#include "../cc_plugin.hpp"
 
-#include "completion_async.hpp"
-#include "suggestion_window.hpp"
+#include "../completion_async.hpp"
+#include "../suggestion_window.hpp"
 namespace cc
 {
 

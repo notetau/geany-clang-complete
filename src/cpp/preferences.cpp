@@ -20,7 +20,7 @@
  */
 
 
-#include "cc_plugin.hpp"
+#include "../cc_plugin.hpp"
 
 #include <vector>
 #include <string>
@@ -205,7 +205,7 @@ GtkWidget* cc::CppCompletionFramework::create_config_widget(GtkDialog* dialog)
 	GError *err = NULL;
 	GtkBuilder* builder = gtk_builder_new();
 	// defined prefcpp_ui, prefcpp_ui_len
-	#include "data/prefcpp_ui.hpp"
+	#include "../data/prefcpp_ui.hpp"
 	gint ret = gtk_builder_add_from_string(builder, (gchar*)prefcpp_ui, prefcpp_ui_len, &err);
 	if(err) {
 		printf("fail to load preference ui: %s\n", err->message);

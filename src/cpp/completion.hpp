@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-#include "completion_base.hpp"
+#include "../completion_base.hpp"
 
 namespace cc
 {
