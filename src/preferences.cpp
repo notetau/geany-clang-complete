@@ -29,14 +29,6 @@
 
 #include "preferences.hpp"
 
-static std::string get_config_file()
-{
-	std::string config_file = geany_data->app->configdir;
-	config_file += G_DIR_SEPARATOR_S "plugins" G_DIR_SEPARATOR_S "clang_complete" G_DIR_SEPARATOR_S
-	                                 "config.conf";
-	return config_file;
-}
-
 // get/set convert function vector and keyfile string list
 static std::vector<std::string> get_vector_from_keyfile_stringlist(GKeyFile* keyfile,
                                                                    const char* group,

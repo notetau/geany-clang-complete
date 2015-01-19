@@ -123,4 +123,13 @@ bool CppCompletionFramework::try_get_completion_results(CodeCompletionResults& r
 	}
 }
 
+std::string CppCompletionFramework::get_config_file()
+{
+	std::string config_file = geany_data->app->configdir;
+	config_file += G_DIR_SEPARATOR_S "plugins" G_DIR_SEPARATOR_S;
+	config_file += get_plugin_name();
+	config_file += G_DIR_SEPARATOR_S "config.conf";
+	return config_file;
+}
+
 }

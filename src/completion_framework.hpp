@@ -57,6 +57,8 @@ class CppCompletionFramework
 	void load_preferences();
 	void updated_preferences();
 	void save_preferences();
+
+	std::string get_config_file();
 };
 
 }
