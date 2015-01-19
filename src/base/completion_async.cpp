@@ -1,7 +1,7 @@
 /*
  * completion_async.cpp - a Geany plugin to provide code completion using clang
  *
- * Copyright (C) 2014 Noto, Yuta <nonotetau(at)gmail(dot)com>
+ * Copyright (C) 2014-2015 Noto, Yuta <nonotetau(at)gmail(dot)com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
