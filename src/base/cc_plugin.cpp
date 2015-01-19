@@ -25,7 +25,7 @@
 #include <vector>
 #include <string.h>
 
-#include "cpp/completion_framework.hpp"
+#include "../completion_framework.hpp"
 // global variables ////////////////////////////////////////////////////////////////
 static cc::SuggestionWindow* suggestWindow;
 

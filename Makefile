@@ -7,8 +7,9 @@ endif
 
 LIBNAME = geanyclangcomplete.so
 
-SRCS = cc_plugin.cpp suggestion_window.cpp completion_async.cpp \
-cpp/preferences.cpp cpp/completion_framework.cpp cpp/completion.cpp
+BASESRCS := base/cc_plugin.cpp base/suggestion_window.cpp base/completion_async.cpp
+
+SRCS = preferences.cpp completion_framework.cpp completion.cpp $(BASESRCS)
 
 OBJS = $(addprefix lib/, $(SRCS:.cpp=.o))
 
