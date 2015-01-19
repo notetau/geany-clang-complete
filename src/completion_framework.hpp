@@ -38,6 +38,8 @@ class CppCompletionFramework
 	CppCompletionFramework();
 	virtual ~CppCompletionFramework();
 
+	const char* get_plugin_name() const { return _("clang-complete"); }
+
 	void set_suggestion_window(SuggestionWindow* window) { suggestion_window = window; }
 
 	bool check_filetype(GeanyFiletype* ft) const;
@@ -56,4 +58,5 @@ class CppCompletionFramework
 	void updated_preferences();
 	void save_preferences();
 };
+
 }

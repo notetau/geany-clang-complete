@@ -122,4 +122,5 @@ bool CppCompletionFramework::try_get_completion_results(CodeCompletionResults& r
 		return false;
 	}
 }
+
 }
