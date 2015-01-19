@@ -279,19 +279,19 @@ void cc::CppCompletionFramework::load_preferences()
 	/* Initialising options from config file */
 	GKeyFile* keyfile = g_key_file_new();
 	if (g_key_file_load_from_file(keyfile, config_file.c_str(), G_KEY_FILE_NONE, NULL)) {
-
+		const char* group = get_plugin_name();
 		pref->start_completion_with_dot =
-		    g_key_file_get_boolean(keyfile, "clangcomplete", "start_completion_with_dot", NULL);
+		    g_key_file_get_boolean(keyfile, group, "start_completion_with_dot", NULL);
 		pref->start_completion_with_arrow =
-		    g_key_file_get_boolean(keyfile, "clangcomplete", "start_completion_with_arrow", NULL);
+		    g_key_file_get_boolean(keyfile, group, "start_completion_with_arrow", NULL);
 		pref->start_completion_with_scope_res = g_key_file_get_boolean(
-		    keyfile, "clangcomplete", "start_completion_with_scope_resolution", NULL);
+		    keyfile, group, "start_completion_with_scope_resolution", NULL);
 		pref->row_text_max =
-		    g_key_file_get_integer(keyfile, "clangcomplete", "maximum_char_in_row", NULL);
+		    g_key_file_get_integer(keyfile, group, "maximum_char_in_row", NULL);
 		pref->suggestion_window_height_max =
-		    g_key_file_get_integer(keyfile, "clangcomplete", "maximum_sug_window_height", NULL);
+		    g_key_file_get_integer(keyfile, group, "maximum_sug_window_height", NULL);
 		pref->compiler_options =
-		    get_vector_from_keyfile_stringlist(keyfile, "clangcomplete", "compiler_options", NULL);
+		    get_vector_from_keyfile_stringlist(keyfile, group, "compiler_options", NULL);
 
 		// group, type, key, default-value
 	} else {
@@ -311,18 +311,18 @@ void cc::CppCompletionFramework::save_preferences()
 {
 	std::string config_file = get_config_file();
 	GKeyFile* keyfile = g_key_file_new();
-
+	const char* group = get_plugin_name();
 	ClangCompletePluginPref* pref = ClangCompletePluginPref::instance();
-	g_key_file_set_boolean(keyfile, "clangcomplete", "start_completion_with_dot",
+	g_key_file_set_boolean(keyfile, group, "start_completion_with_dot",
 	                       pref->start_completion_with_dot);
-	g_key_file_set_boolean(keyfile, "clangcomplete", "start_completion_with_arrow",
+	g_key_file_set_boolean(keyfile, group, "start_completion_with_arrow",
 	                       pref->start_completion_with_arrow);
-	g_key_file_set_boolean(keyfile, "clangcomplete", "start_completion_with_scope_resolution",
+	g_key_file_set_boolean(keyfile, group, "start_completion_with_scope_resolution",
 	                       pref->start_completion_with_scope_res);
-	g_key_file_set_integer(keyfile, "clangcomplete", "maximum_char_in_row", pref->row_text_max);
-	g_key_file_set_integer(keyfile, "clangcomplete", "maximum_sug_window_height",
+	g_key_file_set_integer(keyfile, group, "maximum_char_in_row", pref->row_text_max);
+	g_key_file_set_integer(keyfile, group, "maximum_sug_window_height",
 	                       pref->suggestion_window_height_max);
-	set_keyfile_stringlist_by_vector(keyfile, "clangcomplete", "compiler_options",
+	set_keyfile_stringlist_by_vector(keyfile, group, "compiler_options",
 	                                 pref->compiler_options);
 
 	save_keyfile(keyfile, config_file.c_str());
