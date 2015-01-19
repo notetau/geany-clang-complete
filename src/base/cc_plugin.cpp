@@ -220,8 +220,9 @@ static void init_keybindings()
 {
 	const int COUNT_KB = 1;
 	const int KB_COMPLETE_IDX = 0;
-	GeanyKeyGroup* key_group = plugin_set_key_group(
-		geany_plugin, completion_framework->get_plugin_name(), COUNT_KB, NULL);
+	GeanyKeyGroup* key_group = plugin_set_key_group(geany_plugin,
+	                                                completion_framework->get_plugin_name(),
+	                                                COUNT_KB, NULL);
 	keybindings_set_item(key_group, KB_COMPLETE_IDX, force_completion, 0, (GdkModifierType)0,
 	                     "exec", _("complete"), NULL);
 }
