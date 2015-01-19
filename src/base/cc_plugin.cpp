@@ -267,8 +267,4 @@ PluginCallback plugin_callbacks[] = {
     //{"document_open", (GCallback)&on_document_open, FALSE, NULL},
     {NULL, NULL, FALSE, NULL}};
 
-PLUGIN_VERSION_CHECK(211)
-
-PLUGIN_SET_INFO(_("clang-complete"), _("c/c++ code completion by clang"), _("0.03"),
-                _("Noto, Yuta <nonotetau@gmail.com>"));
 }
