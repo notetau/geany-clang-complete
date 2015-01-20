@@ -62,7 +62,7 @@ class CodeCompletionBase
 {
    public:
 	CodeCompletionBase() {}
-	~CodeCompletionBase() {}
+	virtual ~CodeCompletionBase() {}
 	virtual void set_option(std::vector<std::string>& options) = 0;
 	virtual void complete(CodeCompletionResults& result, const char* filename, const char* content,
 	                      int line, int col, int flag = 0) = 0;
