@@ -19,7 +19,7 @@
  * MA 02110-1301, USA.
  */
 
-#include "base/cc_plugin.hpp"
+#include <geanycc/geanycc.hpp>
 
 #include <vector>
 #include <string>
@@ -28,6 +28,7 @@
 #include "completion_framework.hpp"
 
 #include "preferences.hpp"
+
 
 // get/set convert function vector and keyfile string list
 static std::vector<std::string> get_vector_from_keyfile_stringlist(GKeyFile* keyfile,
@@ -100,7 +101,7 @@ static void on_configure_response(GtkDialog* dialog, gint response, gpointer use
 {
 	if (response == GTK_RESPONSE_OK || response == GTK_RESPONSE_APPLY) {
 		g_print("clang complete: modified preferences\n");
-		auto self = (cc::CppCompletionFramework*)user_data;
+		auto self = (geanycc::CppCompletionFramework*)user_data;
 
 		ClangCompletePluginPref* pref = ClangCompletePluginPref::instance();
 
@@ -201,7 +202,7 @@ static void on_click_exec_button(GtkButton* button, gpointer user_data)
 
 #define GETOBJ(name) GTK_WIDGET(gtk_builder_get_object(builder, name))
 
-GtkWidget* cc::CppCompletionFramework::create_config_widget(GtkDialog* dialog)
+GtkWidget* geanycc::CppCompletionFramework::create_config_widget(GtkDialog* dialog)
 {
 	g_debug("code complete: plugin_configure");
 	ClangCompletePluginPref* pref = ClangCompletePluginPref::instance();
@@ -262,7 +263,7 @@ GtkWidget* cc::CppCompletionFramework::create_config_widget(GtkDialog* dialog)
 	return vbox;
 }
 
-void cc::CppCompletionFramework::load_preferences()
+void geanycc::CppCompletionFramework::load_preferences()
 {
 	ClangCompletePluginPref* pref = ClangCompletePluginPref::instance();
 
@@ -299,7 +300,7 @@ void cc::CppCompletionFramework::load_preferences()
 	this->updated_preferences();
 }
 
-void cc::CppCompletionFramework::save_preferences()
+void geanycc::CppCompletionFramework::save_preferences()
 {
 	std::string config_file = get_config_file();
 	GKeyFile* keyfile = g_key_file_new();
@@ -322,7 +323,7 @@ void cc::CppCompletionFramework::save_preferences()
 	g_key_file_free(keyfile);
 }
 
-void cc::CppCompletionFramework::updated_preferences()
+void geanycc::CppCompletionFramework::updated_preferences()
 {
 	ClangCompletePluginPref* pref = ClangCompletePluginPref::instance();
 	this->set_completion_option(pref->compiler_options);

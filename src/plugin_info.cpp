@@ -19,7 +19,7 @@
  * MA 02110-1301, USA.
  */
 
-#include "base/cc_plugin.hpp"
+#include <geanycc/geanycc.hpp>
 
 extern "C" {
 PLUGIN_VERSION_CHECK(211)
@@ -27,7 +27,16 @@ PLUGIN_VERSION_CHECK(211)
 PLUGIN_SET_INFO(
 	_("clang-complete"),
 	_("c/c++ code completion by clang"),
-	_("0.03"),
+	_("0.04"),
 	_("Noto, Yuta <nonotetau@gmail.com>")
 )
+}
+
+#include "completion_framework.hpp"
+namespace geanycc
+{
+CompletionFrameworkBase* create_lang_completion_framework()
+{
+	return new CppCompletionFramework();
+}
 }

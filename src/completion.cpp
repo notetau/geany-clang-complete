@@ -348,7 +348,7 @@ class CppCodeCompletion::CodeCompletionImpl
 			result.reserve(results->NumResults);
 			clang_sortCodeCompletionResults(results->Results, results->NumResults);
 			for (int i = 0; i < results->NumResults; i++) {
-				cc::CompleteResultType type = getCursorType(results->Results[i]);
+				geanycc::CompleteResultType type = getCursorType(results->Results[i]);
 
 				if (type != COMPLETE_RESULT_NONE) {
 					result.push_back(CompleteResultRow());

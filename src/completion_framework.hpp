@@ -22,15 +22,34 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "base/cc_plugin.hpp"
 
-#include "base/completion_async.hpp"
-#include "base/suggestion_window.hpp"
-namespace cc
+#include <geanycc/geanycc.hpp>
+
+namespace geanycc
 {
 
-class CppCompletionFramework
+class CppCompletionFramework : public CompletionFrameworkBase
 {
+
+public:
+	CppCompletionFramework();
+	virtual ~CppCompletionFramework();
+
+	const char* get_plugin_name() const { return _("clang-complete"); }
+
+	bool check_filetype(GeanyFiletype* ft) const;
+	/**
+	    return true if typed . -> :: except for comments and strings, otherwise false.
+	 */
+	bool check_trigger_char(GeanyEditor* editor);
+
+	GtkWidget* create_config_widget(GtkDialog* dialog);
+
+	void load_preferences();
+	void updated_preferences();
+	void save_preferences();
+};
+/*
 	CodeCompletionAsyncWrapper* completion;
 	SuggestionWindow* suggestion_window;
 
@@ -43,9 +62,8 @@ class CppCompletionFramework
 	void set_suggestion_window(SuggestionWindow* window) { suggestion_window = window; }
 
 	bool check_filetype(GeanyFiletype* ft) const;
-	/**
-	    return true if typed . -> :: except for comments and strings, otherwise false.
-	 */
+
+	//    return true if typed . -> :: except for comments and strings, otherwise false.
 	bool check_trigger_char(GeanyEditor* editor);
 
 	void set_completion_option(std::vector<std::string>& options);
@@ -59,6 +77,6 @@ class CppCompletionFramework
 	void save_preferences();
 
 	std::string get_config_file();
-};
+*/
 
 }

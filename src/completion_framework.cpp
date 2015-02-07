@@ -19,6 +19,7 @@
  * MA 02110-1301, USA.
  */
 
+
 #include "completion_framework.hpp"
 
 #include "preferences.hpp"
@@ -26,13 +27,12 @@
 
 #include <SciLexer.h>
 
-namespace cc
+namespace geanycc
 {
 
 CppCompletionFramework::CppCompletionFramework()
 {
-	completion = new CodeCompletionAsyncWrapper(new CodeCompletion());
-	suggestion_window = nullptr;
+	completion = new CodeCompletionAsyncWrapper(new CppCodeCompletion());
 }
 CppCompletionFramework::~CppCompletionFramework()
 {
@@ -99,6 +99,7 @@ bool CppCompletionFramework::check_trigger_char(GeanyEditor* editor)
 	return false;
 }
 
+/*
 void CppCompletionFramework::set_completion_option(std::vector<std::string>& options)
 {
 	if (completion) {
@@ -131,5 +132,6 @@ std::string CppCompletionFramework::get_config_file()
 	config_file += G_DIR_SEPARATOR_S "config.conf";
 	return config_file;
 }
+*/
 
 }
