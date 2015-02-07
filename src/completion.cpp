@@ -30,15 +30,7 @@
 
 #include <clang-c/Index.h>
 
-using namespace cc;
-
-CompleteResultRow::CompleteResultRow()
-{
-	typed_text.reserve(100);
-	return_type.reserve(100);
-	arguments.reserve(200);
-	signature.reserve(400);
-}
+using namespace geanycc;
 
 static CompleteResultType getCursorType(const CXCompletionResult& result)
 {
@@ -241,7 +233,7 @@ struct CompletionStringParser
 	}
 };
 
-class CodeCompletion::CodeCompletionImpl
+class CppCodeCompletion::CodeCompletionImpl
 {
    public:
 	CXIndex index;
@@ -376,13 +368,16 @@ class CodeCompletion::CodeCompletionImpl
 };
 
 // CodeCompletion //////////////////////////////////////////////////////////////
-CodeCompletion::CodeCompletion() : pimpl(new CodeCompletionImpl()) {}
-CodeCompletion::~CodeCompletion() { delete pimpl; }
+CppCodeCompletion::CppCodeCompletion() : pimpl(new CodeCompletionImpl()) {}
+CppCodeCompletion::~CppCodeCompletion() { delete pimpl; }
 
-void CodeCompletion::set_option(std::vector<std::string>& options) { pimpl->set_option(options); }
+void CppCodeCompletion::set_option(std::vector<std::string>& options)
+{
+	pimpl->set_option(options);
+}
 
-void CodeCompletion::complete(CodeCompletionResults& result, const char* filename,
-                              const char* content, int line, int col, int flag)
+void CppCodeCompletion::complete(CodeCompletionResults& result, const char* filename,
+                                 const char* content, int line, int col, int flag)
 {
 	pimpl->complete(result, filename, content, line, col, flag);
 }

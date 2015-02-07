@@ -23,22 +23,22 @@
 #include <string>
 #include <vector>
 
-#include "base/completion_base.hpp"
+#include <geanycc/geanycc.hpp>
 
-namespace cc
+namespace geanycc
 {
-class CodeCompletion : public CodeCompletionBase
+class CppCodeCompletion : public CodeCompletionBase
 {
    public:
-	CodeCompletion();
-	~CodeCompletion();
+	CppCodeCompletion();
+	~CppCodeCompletion();
 	void set_option(std::vector<std::string>& options);
 	void complete(CodeCompletionResults& result, const char* filename, const char* content,
 	              int line, int col, int flag = 0);
 
    private:
-	CodeCompletion(const CodeCompletion&);
-	void operator=(const CodeCompletion&);
+	CppCodeCompletion(const CppCodeCompletion&);
+	void operator=(const CppCodeCompletion&);
 
 	class CodeCompletionImpl;
 	CodeCompletionImpl* pimpl;
