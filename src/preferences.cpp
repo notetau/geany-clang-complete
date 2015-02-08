@@ -29,57 +29,81 @@
 
 #include "preferences.hpp"
 
-
-// get/set convert function vector and keyfile string list
-static std::vector<std::string> get_vector_from_keyfile_stringlist(GKeyFile* keyfile,
-                                                                   const char* group,
-                                                                   const char* key, GError* error)
+namespace geanycc
 {
-	std::vector<std::string> value;
-	gsize option_num = 0;
-	gchar** strs = g_key_file_get_string_list(keyfile, group, key, &option_num, NULL);
-	for (gsize i = 0; i < option_num; i++) {
-		value.push_back(strs[i]);
-	}
-	g_strfreev(strs);
-	return value;
-}
-static void set_keyfile_stringlist_by_vector(GKeyFile* keyfile, const char* group, const char* key,
-                                             std::vector<std::string>& value)
-{
-	int option_num = value.size();
-	gchar** strs = (gchar**)g_malloc0(sizeof(gchar*) * (option_num + 1));
-	for (size_t i = 0; i < value.size(); i++) {
-		strs[i] = g_strdup(value[i].c_str());
-	}
-	g_key_file_set_string_list(keyfile, "clangcomplete", "compiler_options", strs, option_num);
-	g_strfreev(strs);
-}
+    namespace util
+    {
+	// get/set convert function std::vector and keyfile string list
+	std::vector<std::string>
+	get_vector_from_keyfile_stringlist(GKeyFile* keyfile,
+	                                   const char* group, const char* key, GError* error);
 
-static void save_keyfile(GKeyFile* keyfile, const char* path)
-{
-	// TODO use smart_ptr if errors occur, happen memory leak
-	gchar* dirname = g_path_get_dirname(path);
+	void set_keyfile_stringlist_by_vector(GKeyFile* keyfile,
+	                                      const char* group, const char* key,
+		                              std::vector<std::string>& value);
 
-	gsize data_length;
-	gchar* data = g_key_file_to_data(keyfile, &data_length, NULL);
+	void save_keyfile(GKeyFile* keyfile, const char* path);
 
-	int err = utils_mkdir(dirname, TRUE);
-	if (err != 0) {
-		g_critical(_("Failed to create configuration directory \"%s\": %s"), dirname,
-		           g_strerror(err));
-		return;
+
+	std::vector<std::string>
+	get_vector_from_keyfile_stringlist(GKeyFile* keyfile,
+	                                   const char* group, const char* key, GError* error)
+	{
+		std::vector<std::string> value;
+		gsize option_num = 0;
+		gchar** strs = g_key_file_get_string_list(keyfile, group, key, &option_num, NULL);
+		for (gsize i = 0; i < option_num; i++) {
+			value.push_back(strs[i]);
+		}
+		g_strfreev(strs);
+		return value;
 	}
 
-	GError* error = NULL;
-	if (!g_file_set_contents(path, data, data_length, &error)) {
-		g_critical(_("Failed to save configuration file: %s"), error->message);
-		g_error_free(error);
-		return;
+
+	void set_keyfile_stringlist_by_vector(GKeyFile* keyfile, const char* group, const char* key,
+		                              std::vector<std::string>& value)
+	{
+		int option_num = value.size();
+		gchar** strs = (gchar**)g_malloc0(sizeof(gchar*) * (option_num + 1));
+		for (size_t i = 0; i < value.size(); i++) {
+			strs[i] = g_strdup(value[i].c_str());
+		}
+		g_key_file_set_string_list(keyfile, "clangcomplete", "compiler_options",
+		                           strs, option_num);
+		g_strfreev(strs);
 	}
-	g_free(data);
-	g_free(dirname);
-}
+
+
+	void save_keyfile(GKeyFile* keyfile, const char* path)
+	{
+		// TODO use smart_ptr if errors occur, happen memory leak
+		gchar* dirname = g_path_get_dirname(path);
+
+		gsize data_length;
+		gchar* data = g_key_file_to_data(keyfile, &data_length, NULL);
+
+		int err = utils_mkdir(dirname, TRUE);
+		if (err != 0) {
+			g_critical(_("Failed to create configuration directory \"%s\": %s"), dirname,
+				   g_strerror(err));
+			return;
+		}
+
+		GError* error = NULL;
+		if (!g_file_set_contents(path, data, data_length, &error)) {
+			g_critical(_("Failed to save configuration file: %s"), error->message);
+			g_error_free(error);
+			return;
+		}
+		g_free(data);
+		g_free(dirname);
+	}
+
+
+    } // namespace util
+} // namespace geanycc
+
+
 
 // config dialog implements
 
@@ -284,7 +308,8 @@ void geanycc::CppCompletionFramework::load_preferences()
 		pref->suggestion_window_height_max =
 		    g_key_file_get_integer(keyfile, group, "maximum_sug_window_height", NULL);
 		pref->compiler_options =
-		    get_vector_from_keyfile_stringlist(keyfile, group, "compiler_options", NULL);
+		    geanycc::util::get_vector_from_keyfile_stringlist(
+			keyfile, group, "compiler_options", NULL);
 
 		// group, type, key, default-value
 	} else {
@@ -315,10 +340,10 @@ void geanycc::CppCompletionFramework::save_preferences()
 	g_key_file_set_integer(keyfile, group, "maximum_char_in_row", pref->row_text_max);
 	g_key_file_set_integer(keyfile, group, "maximum_sug_window_height",
 	                       pref->suggestion_window_height_max);
-	set_keyfile_stringlist_by_vector(keyfile, group, "compiler_options",
-	                                 pref->compiler_options);
+	geanycc::util::set_keyfile_stringlist_by_vector(keyfile, group, "compiler_options",
+	                                                pref->compiler_options);
 
-	save_keyfile(keyfile, config_file.c_str());
+	geanycc::util::save_keyfile(keyfile, config_file.c_str());
 
 	g_key_file_free(keyfile);
 }
