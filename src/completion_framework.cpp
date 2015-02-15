@@ -92,46 +92,11 @@ bool CppCompletionFramework::check_trigger_char(GeanyEditor* editor)
 			if (c0_style_id == SCE_C_NUMBER) {
 				return false;
 			}
-			/* TODO ignore 0 omitted floating number such as ".123" */
+			// TODO ignore 0 omitted floating number such as ".123"
 			return true;
 		}
 	}
 	return false;
 }
 
-/*
-void CppCompletionFramework::set_completion_option(std::vector<std::string>& options)
-{
-	if (completion) {
-		completion->set_option(options);
-	}
-}
-
-void CppCompletionFramework::complete_async(const char* filename, const char* content, int line,
-                                            int col, int flag)
-{
-	if (completion) {
-		completion->complete_async(filename, content, line, col, flag);
-	}
-}
-
-bool CppCompletionFramework::try_get_completion_results(CodeCompletionResults& result)
-{
-	if (completion) {
-		return completion->try_get_results(result);
-	} else {
-		return false;
-	}
-}
-
-std::string CppCompletionFramework::get_config_file()
-{
-	std::string config_file = geany_data->app->configdir;
-	config_file += G_DIR_SEPARATOR_S "plugins" G_DIR_SEPARATOR_S;
-	config_file += get_plugin_name();
-	config_file += G_DIR_SEPARATOR_S "config.conf";
-	return config_file;
-}
-*/
-
-}
+} // namespace geanycc
