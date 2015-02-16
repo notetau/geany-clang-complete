@@ -475,26 +475,3 @@ struct CompletionStringParserDebugPrinter
 		printf("\n");
 	}
 };
-
-// unsigned diag_num = clang_codeCompleteGetNumDiagnostics(results);
-// for(unsigned i = 0; i < diag_num; i++) {
-//	CXDiagnostic diag = clang_codeCompleteGetDiagnostic(results, i);
-//	CXString text = clang_formatDiagnostic(diag,
-//		clang_defaultDiagnosticDisplayOptions());
-//	const char* str = clang_getCString(text);
-//	std::cerr<< "diag "<<i<<" "<< str <<std::endl;
-//	clang_disposeDiagnostic(diag);
-//	clang_disposeString(text);
-//}
-
-// long long cc_context = clang_codeCompleteGetContexts(results);
-// std::cerr<< "cc_context "<< cc_context <<std::endl;
-
-// container such as class, struct, ...
-// unsigned IsIncomplete;
-// CXCursorKind ckind = clang_codeCompleteGetContainerKind(results, &IsIncomplete);
-// std::cerr<< "cursor "<< ckind << " iscompleted="<<IsIncomplete<<std::endl;
-// CXString cxstr = clang_codeCompleteGetContainerUSR(results);
-// const char* str = clang_getCString(cxstr);
-// std::cerr<< "usr "<< str <<std::endl;
-// clang_disposeString(cxstr);
