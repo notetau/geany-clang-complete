@@ -9,7 +9,7 @@ or
 `make install PREFIX=<INSTALL DIR>`
 
 ## screenshot
-see [wiki](https://github.com/notetau/geany-clang-complete/wiki)
+![screenshot1](https://github.com/notetau/geany-complete-core/wiki/image/geany-cc_sc1.png)
 
 ## see
 
