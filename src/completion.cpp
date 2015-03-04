@@ -27,6 +27,7 @@
 #include <memory>
 #include <map>
 #include <cstring>
+#include <memory>
 
 #include <clang-c/Index.h>
 
@@ -275,7 +276,7 @@ class CppCodeCompletion::CodeCompletionImpl
 		if (tu_cache.find(filename) != tu_cache.end()) {
 			tu = tu_cache[filename];
 		} else {  // not found -> create
-			const char** argv = new const char* [commandline_args.size()];
+			std::unique_ptr<const char*[]> argv(new const char*[commandline_args.size()]);
 			for (size_t i = 0; i < commandline_args.size(); i++) {
 				argv[i] = commandline_args[i].c_str();
 			}
@@ -283,12 +284,11 @@ class CppCodeCompletion::CodeCompletionImpl
 			f[0].Filename = filename;
 			f[0].Contents = content;
 			f[0].Length = strlen(content);
-			tu = clang_parseTranslationUnit(index, filename, argv, commandline_args.size(), f, 1,
-			                                clang_defaultEditingTranslationUnitOptions());
+			tu = clang_parseTranslationUnit(index, filename, argv.get(), commandline_args.size(),
+			                                f, 1, clang_defaultEditingTranslationUnitOptions());
 			if (tu) {
 				tu_cache.insert(std::pair<std::string, CXTranslationUnit>(filename, tu));
 			}
-			delete[] argv;
 		}
 		return tu;
 	}
