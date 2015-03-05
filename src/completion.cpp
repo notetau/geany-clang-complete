@@ -252,21 +252,25 @@ class CppCodeCompletion::CodeCompletionImpl
 
 	~CodeCompletionImpl()
 	{
-		clear_translation_unit_cache();
-		clang_disposeIndex(index);
+		clear_index();
 		std::cout << "destroyed codecomplete" << std::endl;
 	}
 
 	void create_index()
 	{
+		clear_index();
+		index = clang_createIndex(0, 0); /* (excludeDeclarationsFromPCH, displayDiagnostics) */
+		if (!index) {
+			std::cerr << "an unexpected error @ clang_createIndex" << std::endl;
+		}
+	}
+
+	void clear_index()
+	{
 		if (index) {
 			clear_translation_unit_cache();
 			clang_disposeIndex(index);
 			index = NULL;
-		}
-		index = clang_createIndex(0, 0); /* (excludeDeclarationsFromPCH, displayDiagnostics) */
-		if (!index) {
-			std::cerr << "an unexpected error @ clang_createIndex" << std::endl;
 		}
 	}
 
