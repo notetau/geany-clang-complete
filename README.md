@@ -1,5 +1,4 @@
 #geany-clang-complete
-----------
 
 a [Geany](https://github.com/geany/geany) plugin to provide code completion (C/C++) using clang
 
